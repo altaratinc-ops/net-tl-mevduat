@@ -120,6 +120,29 @@ function calcNetDeposit(params: {
   return { gross, withholding, net, eay, stopajPctUsed };
 }
 
+function copyToClipboard(text: string) {
+  // Web (Vercel)
+  const nav: any = typeof navigator !== "undefined" ? navigator : null;
+  if (nav?.clipboard?.writeText) {
+    return nav.clipboard.writeText(text);
+  }
+
+  // Fallback (web)
+  try {
+    const textarea = document.createElement("textarea");
+    textarea.value = text;
+    textarea.style.position = "fixed";
+    textarea.style.left = "-9999px";
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand("copy");
+    document.body.removeChild(textarea);
+    return Promise.resolve();
+  } catch {
+    return Promise.resolve();
+  }
+}
+
 export default function App() {
   const [principalText, setPrincipalText] = useState(() => formatTL(DEFAULT_PRINCIPAL));
   const [rateText, setRateText] = useState(() => DEFAULT_RATE.toString().replace(".", ","));
@@ -134,6 +157,9 @@ export default function App() {
     days: false,
   });
 
+  // Kopyalandı feedback
+  const [copied, setCopied] = useState(false);
+
   const daysValue = useMemo(() => {
     if (selectedDays === "custom") {
       const d = parseInt(digitsOnly(customDaysText), 10);
@@ -142,12 +168,13 @@ export default function App() {
     return selectedDays;
   }, [selectedDays, customDaysText]);
 
+  const principalNumber = useMemo(() => parsePrincipalInt(principalText), [principalText]);
+  const rateNumber = useMemo(() => parseRateNumber(rateText), [rateText]);
+
   const result = useMemo(() => {
-    const principal = parsePrincipalInt(principalText);
-    const annualRatePct = parseRateNumber(rateText);
     const days = daysValue > 0 ? daysValue : DEFAULT_DAYS;
-    return calcNetDeposit({ principal, annualRatePct, days });
-  }, [principalText, rateText, daysValue]);
+    return calcNetDeposit({ principal: principalNumber, annualRatePct: rateNumber, days });
+  }, [principalNumber, rateNumber, daysValue]);
 
   // Pulse
   const pulse = useRef(new Animated.Value(1)).current;
@@ -162,6 +189,27 @@ export default function App() {
       Animated.timing(pulse, { toValue: 1, duration: 120, useNativeDriver: true }),
     ]).start();
   }, [pulseKey, pulse]);
+
+  const canCalculate = principalNumber > 0 && rateNumber > 0;
+
+  async function onCopyNet() {
+    if (!canCalculate) return;
+
+    const days = daysValue || DEFAULT_DAYS;
+    const netStr = `${formatTL(result.net)} TL`;
+    const text = `Net kazanç: ${netStr} (Anapara: ${formatTL(principalNumber)} TL, Faiz: %${rateText}, Vade: ${days} gün)`;
+
+    await copyToClipboard(text);
+
+    setCopied(true);
+    setTimeout(() => setCopied(false), 1000);
+  }
+
+  const warningText = !principalNumber
+    ? "Anapara girin"
+    : !rateNumber
+    ? "Faiz oranı girin"
+    : "";
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -247,20 +295,31 @@ export default function App() {
             </View>
           </View>
 
-          {/* NET KART */}
+          {/* NET KART + KOPYALA */}
           <Animated.View style={[styles.netCard, { transform: [{ scale: pulse }] }]}>
-            <Text style={styles.netValue}>+ {formatTL(result.net)} TL</Text>
-            <Text style={styles.netLabel}>Net Kazanç</Text>
+            <Pressable onPress={onCopyNet} disabled={!canCalculate} style={styles.netPressArea}>
+              <Text style={[styles.netValue, !canCalculate && styles.netValueDisabled]}>
+                + {formatTL(canCalculate ? result.net : 0)} TL
+              </Text>
 
-            {/* ✅ Premium pill’ler */}
-            <View style={styles.metaPills}>
-              <View style={styles.metaPill}>
-                <Text style={styles.metaPillText}>Vade: {daysValue || DEFAULT_DAYS} gün</Text>
+              <View style={styles.netLabelRow}>
+                <Text style={styles.netLabel}>Net Kazanç</Text>
+                {copied ? <Text style={styles.copied}>Kopyalandı ✓</Text> : <Text style={styles.copyHint}>Dokun → Kopyala</Text>}
               </View>
-              <View style={styles.metaPill}>
-                <Text style={styles.metaPillText}>Stopaj: %{result.stopajPctUsed}</Text>
+
+              {!canCalculate ? <Text style={styles.warning}>{warningText}</Text> : null}
+
+              <View style={styles.metaPills}>
+                <View style={styles.metaPill}>
+                  <Text style={styles.metaPillText}>Vade: {daysValue || DEFAULT_DAYS} gün</Text>
+                </View>
+                <View style={styles.metaPill}>
+                  <Text style={styles.metaPillText}>Stopaj: %{result.stopajPctUsed}</Text>
+                </View>
               </View>
-            </View>
+
+              <Text style={styles.microNote}>Hesaplama: basit faiz (365 gün)</Text>
+            </Pressable>
           </Animated.View>
 
           {/* DETAY */}
@@ -345,8 +404,8 @@ const styles = StyleSheet.create({
     marginTop: 18,
     backgroundColor: "#F0FDF4",
     borderRadius: 16,
-    paddingVertical: 16,
-    paddingHorizontal: 14,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
     borderWidth: 1,
     borderColor: "#BBF7D0",
     alignItems: "center",
@@ -356,10 +415,18 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 6 },
     elevation: 2,
   },
-  netValue: { fontSize: 40, fontWeight: "900", color: "#166534" },
-  netLabel: { marginTop: 2, fontSize: 14, color: "#6B7280" },
+  netPressArea: { width: "100%", alignItems: "center", paddingVertical: 6 },
 
-  // ✅ yeni pill alanı
+  netValue: { fontSize: 40, fontWeight: "900", color: "#166534" },
+  netValueDisabled: { color: "#9CA3AF" },
+
+  netLabelRow: { flexDirection: "row", gap: 10, alignItems: "center", marginTop: 4 },
+  netLabel: { fontSize: 14, color: "#6B7280" },
+  copyHint: { fontSize: 12, color: "#065F46", fontWeight: "700" },
+  copied: { fontSize: 12, color: "#065F46", fontWeight: "900" },
+
+  warning: { marginTop: 6, fontSize: 12, color: "#6B7280", fontWeight: "700" },
+
   metaPills: { flexDirection: "row", gap: 8, marginTop: 10, flexWrap: "wrap", justifyContent: "center" },
   metaPill: {
     backgroundColor: "#FFFFFF",
@@ -370,6 +437,8 @@ const styles = StyleSheet.create({
     borderRadius: 999,
   },
   metaPillText: { fontSize: 12, color: "#065F46", fontWeight: "800" },
+
+  microNote: { marginTop: 8, fontSize: 11, color: "#6B7280" },
 
   breakdown: { marginTop: 16, alignSelf: "stretch", gap: 6 },
   breakRow: { fontSize: 13, color: "#374151", textAlign: "center" },
