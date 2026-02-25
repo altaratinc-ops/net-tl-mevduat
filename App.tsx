@@ -31,24 +31,28 @@ const STOPAJ_TL_OVER_1Y = 10;    // >365
 const TCMB_POLICY_RATE_PCT = 37;
 const TCMB_POLICY_RATE_NOTE_DATE = "2026-01-22";
 
+const DEFAULT_PRINCIPAL = 500000; // 500.000 TL
+const DEFAULT_RATE = 42.5;        // %42,5
+const DEFAULT_DAYS = 32;          // 32 gün
+
 function clampNonNegative(n: number): number {
   return Number.isFinite(n) && n > 0 ? n : 0;
 }
 
-// Faiz için TR sayı parse: "42,5" -> 42.5, "42.5" -> 42.5
-function parseRateNumber(input: string): number {
-  const raw = (input ?? "").toString().trim();
-  if (!raw) return 0;
+// TR format TL
+function formatTL(n: number): string {
+  const rounded = Math.round(Number.isFinite(n) ? n : 0);
+  return new Intl.NumberFormat("tr-TR").format(rounded);
+}
 
-  let s = raw.replace(/\s+/g, "");
-  s = s.replace(",", "."); // virgül -> nokta
-  s = s.replace(/[^0-9.]/g, "");
-
-  const n = parseFloat(s);
+// Anapara: sadece rakamı alıp integer yap
+function parsePrincipalInt(input: string): number {
+  const digits = (input ?? "").toString().replace(/\D+/g, "");
+  const n = parseInt(digits, 10);
   return Number.isFinite(n) ? n : 0;
 }
 
-// Anapara input'u: sadece rakamı alıp TR formatla (500000 -> 500.000)
+// Anapara input'u: TR binlik format (500000 -> 500.000)
 function formatThousandsTR(input: string): string {
   let s = (input ?? "").toString();
   s = s.replace(/,/g, "");
@@ -59,13 +63,6 @@ function formatThousandsTR(input: string): string {
   return new Intl.NumberFormat("tr-TR").format(n);
 }
 
-// Anapara parse: "500.000" -> 500000 (tam sayı)
-function parsePrincipalInt(input: string): number {
-  const digits = (input ?? "").toString().replace(/\D+/g, "");
-  const n = parseInt(digits, 10);
-  return Number.isFinite(n) ? n : 0;
-}
-
 // Gün: sadece rakam
 function digitsOnly(text: string): string {
   return (text ?? "").replace(/\D+/g, "");
@@ -74,9 +71,8 @@ function digitsOnly(text: string): string {
 // Faiz inputu: '.' -> ',' yap, sadece rakam+virgül, tek virgül
 function formatRateTR(input: string): string {
   let s = (input ?? "").toString();
-
-  s = s.replace(/\./g, ",");      // nokta basarsa virgül olsun
-  s = s.replace(/[^0-9,]/g, "");  // sadece rakam ve virgül
+  s = s.replace(/\./g, ",");
+  s = s.replace(/[^0-9,]/g, "");
 
   const firstCommaIndex = s.indexOf(",");
   if (firstCommaIndex !== -1) {
@@ -85,8 +81,19 @@ function formatRateTR(input: string): string {
     s = before + after;
   }
 
-  if (s.startsWith(",")) s = "0" + s; // ",5" -> "0,5"
+  if (s.startsWith(",")) s = "0" + s;
   return s;
+}
+
+// Faiz parse: "42,5" -> 42.5
+function parseRateNumber(input: string): number {
+  const raw = (input ?? "").toString().trim();
+  if (!raw) return 0;
+  let s = raw.replace(/\s+/g, "");
+  s = s.replace(",", ".");
+  s = s.replace(/[^0-9.]/g, "");
+  const n = parseFloat(s);
+  return Number.isFinite(n) ? n : 0;
 }
 
 function getStopajPctForTlDepositDays(days: number): number {
@@ -111,23 +118,18 @@ function calcNetDeposit(params: {
   const gross = P * r * (d / 365);
   const withholding = gross * s;
   const net = gross - withholding;
-
   const eay = P > 0 ? (net / P) * (365 / d) * 100 : 0;
 
   return { gross, withholding, net, eay, stopajPctUsed };
 }
 
-function formatTL(n: number): string {
-  const rounded = Math.round(Number.isFinite(n) ? n : 0);
-  return new Intl.NumberFormat("tr-TR").format(rounded);
-}
-
 export default function App() {
-  const [principalText, setPrincipalText] = useState("500.000");
-  const [rateText, setRateText] = useState("42,5");
+  // ✅ İlk değerleri number kaynaktan üret: ilk açılışta kesin doğru olur
+  const [principalText, setPrincipalText] = useState(() => formatTL(DEFAULT_PRINCIPAL));
+  const [rateText, setRateText] = useState(() => DEFAULT_RATE.toString().replace(".", ","));
 
-  const [selectedDays, setSelectedDays] = useState<32 | 92 | 180 | "custom">(32);
-  const [customDaysText, setCustomDaysText] = useState("32");
+  const [selectedDays, setSelectedDays] = useState<32 | 92 | 180 | "custom">(DEFAULT_DAYS);
+  const [customDaysText, setCustomDaysText] = useState(() => String(DEFAULT_DAYS));
 
   const daysValue = useMemo(() => {
     if (selectedDays === "custom") {
@@ -137,18 +139,16 @@ export default function App() {
     return selectedDays;
   }, [selectedDays, customDaysText]);
 
-  // Stopaj anında değişsin
   const stopajPreviewPct = useMemo(() => {
-    const d = daysValue > 0 ? daysValue : 32;
+    const d = daysValue > 0 ? daysValue : DEFAULT_DAYS;
     return getStopajPctForTlDepositDays(d);
   }, [daysValue]);
 
-  // ✅ Otomatik hesap (buton yok) + ✅ anapara doğru parse
+  // ✅ Otomatik hesap
   const result = useMemo(() => {
     const principal = parsePrincipalInt(principalText);
     const annualRatePct = parseRateNumber(rateText);
-    const days = daysValue > 0 ? daysValue : 32;
-
+    const days = daysValue > 0 ? daysValue : DEFAULT_DAYS;
     return calcNetDeposit({ principal, annualRatePct, days });
   }, [principalText, rateText, daysValue]);
 
@@ -163,7 +163,7 @@ export default function App() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-          <Text style={styles.title} numberOfLines={2} adjustsFontSizeToFit}>
+          <Text style={styles.title} numberOfLines={2} adjustsFontSizeToFit>
             Net TL Mevduat
           </Text>
           <Text style={styles.subtitle}>Elinize Geçecek Net TL</Text>
@@ -239,7 +239,7 @@ export default function App() {
               )}
 
               <Text style={styles.infoText}>
-                Stopaj (TL mevduat, vade bazlı): %{stopajPreviewPct} — Vade: {daysValue || 32} gün — Güncelleme:{" "}
+                Stopaj (TL mevduat, vade bazlı): %{stopajPreviewPct} — Vade: {daysValue || DEFAULT_DAYS} gün — Güncelleme:{" "}
                 {INFO_LAST_UPDATED}
               </Text>
 
