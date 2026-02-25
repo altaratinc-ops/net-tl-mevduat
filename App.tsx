@@ -35,11 +35,12 @@ const DEFAULT_RATE = 42.5;
 const DEFAULT_DAYS = 32;
 
 // ✅ PİYASA ARALIĞI — MANUEL (bankasız, düşük risk)
+// Kullanıcının verdiği aralıklar (26 Şubat 2026)
 const MARKET_RANGES_LAST_UPDATED = "26 Şubat 2026";
-const MARKET_RANGES: Array<{ days: 32 | 92 | 180; min: number; max: number; note?: string }> = [
-  { days: 32, min: 0, max: 0, note: "Henüz girilmedi" },
-  { days: 92, min: 0, max: 0, note: "Henüz girilmedi" },
-  { days: 180, min: 0, max: 0, note: "Henüz girilmedi" },
+const MARKET_RANGES: Array<{ days: 32 | 92 | 180; min: number; max: number }> = [
+  { days: 32, min: 38, max: 51 },
+  { days: 92, min: 37, max: 45 },
+  { days: 180, min: 35, max: 43 },
 ];
 
 function clampNonNegative(n: number): number {
@@ -152,9 +153,18 @@ async function copyToClipboard(text: string) {
 }
 
 function fmtPctTR(n: number) {
-  const s = n.toFixed(2);
-  const trimmed = s.replace(/0+$/g, "").replace(/\.$/g, "");
-  return trimmed.replace(".", ",");
+  // 38 -> "38" / 42.5 -> "42,5"
+  const s = Number.isFinite(n) ? n.toString() : "0";
+  return s.includes(".") ? s.replace(".", ",") : s;
+}
+
+// ✅ Kullanıcının girdiği gün sayısına göre “hangi aralık bandı” uygulanacak?
+function getMarketBucket(days: number): 32 | 92 | 180 | null {
+  const d = Math.max(1, Math.floor(clampNonNegative(days)));
+  if (d <= 32) return 32;
+  if (d <= 92) return 92;
+  if (d <= 180) return 180;
+  return null; // 180+
 }
 
 export default function App() {
@@ -223,26 +233,7 @@ export default function App() {
     setTimeout(() => setCopied(false), 1000);
   }
 
-  // Piyasa aralığı yalnız 32/92/180 için
-  const selectedFixedDays = useMemo(() => {
-    if (selectedDays === 32 || selectedDays === 92 || selectedDays === 180) return selectedDays;
-    const d = daysValue || DEFAULT_DAYS;
-    const options: Array<32 | 92 | 180> = [32, 92, 180];
-    let best: 32 | 92 | 180 = 32;
-    let bestDiff = Infinity;
-    for (const o of options) {
-      const diff = Math.abs(o - d);
-      if (diff < bestDiff) {
-        bestDiff = diff;
-        best = o;
-      }
-    }
-    return best;
-  }, [selectedDays, daysValue]);
-
-  const marketRangeForSelectedDays = useMemo(() => {
-    return MARKET_RANGES.find((x) => x.days === selectedFixedDays) ?? null;
-  }, [selectedFixedDays]);
+  const marketBucket = useMemo(() => getMarketBucket(daysValue || DEFAULT_DAYS), [daysValue]);
 
   return (
     <SafeAreaView style={styles.safe}>
@@ -319,7 +310,7 @@ export default function App() {
                   value={customDaysText}
                   onChangeText={(t) => setCustomDaysText(digitsOnly(t))}
                   keyboardType="numeric"
-                  placeholder="Gün girin (ör. 400)"
+                  placeholder="Gün girin (ör. 35 / 400)"
                   style={[styles.input, { marginTop: 10 }, focus.days && styles.inputFocus]}
                   onFocus={() => setFocus((p) => ({ ...p, days: true }))}
                   onBlur={() => setFocus((p) => ({ ...p, days: false }))}
@@ -374,7 +365,7 @@ export default function App() {
             <Text style={styles.breakRow}>Efektif yıllık (EAY): {result.eay.toFixed(1)}%</Text>
           </View>
 
-          {/* PİYASA ARALIĞI */}
+          {/* PİYASA ARALIĞI (HEPSİ HER ZAMAN GÖRÜNÜR) */}
           <View style={styles.sectionCard}>
             <View style={styles.sectionHeaderRow}>
               <Text style={styles.sectionTitle}>Piyasa Aralığı (Bilgilendirme)</Text>
@@ -382,28 +373,35 @@ export default function App() {
             </View>
 
             <Text style={styles.sectionDesc}>
-              Gösterilen vade: <Text style={styles.bold}>{selectedFixedDays} gün</Text>
+              Seçili vade: <Text style={styles.bold}>{daysValue || DEFAULT_DAYS} gün</Text>
             </Text>
 
-            {marketRangeForSelectedDays && marketRangeForSelectedDays.min > 0 ? (
-              <View style={styles.rangeBox}>
-                <Text style={styles.rangeText}>
-                  Genel aralık:{" "}
-                  <Text style={styles.rangeStrong}>
-                    %{fmtPctTR(marketRangeForSelectedDays.min)} – %{fmtPctTR(marketRangeForSelectedDays.max)}
-                  </Text>
-                </Text>
-                {marketRangeForSelectedDays.note ? (
-                  <Text style={styles.sectionTiny}>{marketRangeForSelectedDays.note}</Text>
-                ) : null}
-              </View>
+            <View style={{ marginTop: 10, gap: 8 }}>
+              {MARKET_RANGES.map((r) => {
+                const active = marketBucket === r.days;
+                return (
+                  <View key={r.days} style={[styles.rangeLine, active && styles.rangeLineActive]}>
+                    <Text style={[styles.rangeLineText, active && styles.rangeLineTextActive]}>
+                      {r.days} gün: %{fmtPctTR(r.min)} – %{fmtPctTR(r.max)}
+                    </Text>
+                    {active ? <Text style={styles.appliesBadge}>Uygulanan bant</Text> : null}
+                  </View>
+                );
+              })}
+            </View>
+
+            {marketBucket === null ? (
+              <Text style={styles.sectionTiny}>
+                180 gün üzeri vadelerde oranlar; banka, kampanya ve müşteriye göre çok daha değişken olabilir. Bu yüzden bu
+                aracı “sabit piyasa aralığı” yerine, sizin girdiğiniz faiz oranı ile net getiri hesabı için kullanmanız
+                daha sağlıklıdır.
+              </Text>
             ) : (
-              <Text style={styles.sectionDesc}>Bu vade için aralık henüz girilmedi.</Text>
+              <Text style={styles.sectionTiny}>
+                Not: Bu aralık bilgilendirme amaçlıdır. Hesaplama ekranındaki sonuçlar, sizin girdiğiniz faiz oranı üzerinden
+                yapılır.
+              </Text>
             )}
-
-            <Text style={styles.sectionTiny}>
-              Not: Bu aralık bilgilendirme amaçlıdır. Oranlar bankaya/kanala/müşteriye göre değişebilir.
-            </Text>
           </View>
 
           {/* TCMB */}
@@ -549,16 +547,35 @@ const styles = StyleSheet.create({
   sectionTiny: { marginTop: 10, fontSize: 11, color: "#6B7280" },
   bold: { fontWeight: "900", color: "#111827" },
 
-  rangeBox: {
-    marginTop: 10,
-    backgroundColor: "#F3F4F6",
-    borderRadius: 12,
-    padding: 10,
+  rangeLine: {
     borderWidth: 1,
     borderColor: "#E5E7EB",
+    backgroundColor: "#F9FAFB",
+    borderRadius: 12,
+    paddingVertical: 10,
+    paddingHorizontal: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 8,
   },
-  rangeText: { fontSize: 12, color: "#111827" },
-  rangeStrong: { fontWeight: "900" },
+  rangeLineActive: {
+    borderColor: "#BBF7D0",
+    backgroundColor: "#F0FDF4",
+  },
+  rangeLineText: { fontSize: 12, color: "#111827", fontWeight: "800" },
+  rangeLineTextActive: { color: "#065F46" },
+  appliesBadge: {
+    fontSize: 10,
+    fontWeight: "900",
+    color: "#065F46",
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#BBF7D0",
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    borderRadius: 999,
+  },
 
   infoCard: {
     marginTop: 18,
