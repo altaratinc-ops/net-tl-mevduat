@@ -35,38 +35,35 @@ function clampNonNegative(n: number): number {
   return Number.isFinite(n) && n > 0 ? n : 0;
 }
 
-function parseTrNumber(input: string): number {
+// Faiz için TR sayı parse: "42,5" -> 42.5, "42.5" -> 42.5
+function parseRateNumber(input: string): number {
   const raw = (input ?? "").toString().trim();
   if (!raw) return 0;
 
   let s = raw.replace(/\s+/g, "");
-
-  // "1.234,56" -> "1234.56"
-  if (s.includes(".") && s.includes(",")) {
-    s = s.replace(/\./g, "").replace(",", ".");
-  } else if (s.includes(",")) {
-    // "42,5" -> "42.5"
-    s = s.replace(",", ".");
-  } else {
-    // "500.000" gibi (birden fazla nokta) -> "500000"
-    const dotCount = (s.match(/\./g) || []).length;
-    if (dotCount >= 2) s = s.replace(/\./g, "");
-  }
-
+  s = s.replace(",", "."); // virgül -> nokta
   s = s.replace(/[^0-9.]/g, "");
+
   const n = parseFloat(s);
   return Number.isFinite(n) ? n : 0;
 }
 
-// Anapara: sadece rakamı al, TR formatla. Virgül vs yazsa da yok say.
+// Anapara input'u: sadece rakamı alıp TR formatla (500000 -> 500.000)
 function formatThousandsTR(input: string): string {
   let s = (input ?? "").toString();
   s = s.replace(/,/g, "");
-  const digitsOnly = s.replace(/\D+/g, "");
-  if (!digitsOnly) return "";
-  const n = parseInt(digitsOnly, 10);
+  const digits = s.replace(/\D+/g, "");
+  if (!digits) return "";
+  const n = parseInt(digits, 10);
   if (!Number.isFinite(n)) return "";
   return new Intl.NumberFormat("tr-TR").format(n);
+}
+
+// Anapara parse: "500.000" -> 500000 (tam sayı)
+function parsePrincipalInt(input: string): number {
+  const digits = (input ?? "").toString().replace(/\D+/g, "");
+  const n = parseInt(digits, 10);
+  return Number.isFinite(n) ? n : 0;
 }
 
 // Gün: sadece rakam
@@ -74,7 +71,7 @@ function digitsOnly(text: string): string {
   return (text ?? "").replace(/\D+/g, "");
 }
 
-// Faiz: '.' -> ',' yap, sadece rakam+virgül, tek virgül
+// Faiz inputu: '.' -> ',' yap, sadece rakam+virgül, tek virgül
 function formatRateTR(input: string): string {
   let s = (input ?? "").toString();
 
@@ -126,7 +123,6 @@ function formatTL(n: number): string {
 }
 
 export default function App() {
-  // ✅ Placeholder değil, gerçek başlangıç değerleri (0 olmaz)
   const [principalText, setPrincipalText] = useState("500.000");
   const [rateText, setRateText] = useState("42,5");
 
@@ -141,16 +137,16 @@ export default function App() {
     return selectedDays;
   }, [selectedDays, customDaysText]);
 
-  // ✅ Stopaj preview anında değişir
+  // Stopaj anında değişsin
   const stopajPreviewPct = useMemo(() => {
     const d = daysValue > 0 ? daysValue : 32;
     return getStopajPctForTlDepositDays(d);
   }, [daysValue]);
 
-  // ✅ SONUÇLAR otomatik hesaplanır (buton yok)
+  // ✅ Otomatik hesap (buton yok) + ✅ anapara doğru parse
   const result = useMemo(() => {
-    const principal = parseTrNumber(principalText);
-    const annualRatePct = parseTrNumber(rateText);
+    const principal = parsePrincipalInt(principalText);
+    const annualRatePct = parseRateNumber(rateText);
     const days = daysValue > 0 ? daysValue : 32;
 
     return calcNetDeposit({ principal, annualRatePct, days });
@@ -167,7 +163,7 @@ export default function App() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-          <Text style={styles.title} numberOfLines={2} adjustsFontSizeToFit>
+          <Text style={styles.title} numberOfLines={2} adjustsFontSizeToFit}>
             Net TL Mevduat
           </Text>
           <Text style={styles.subtitle}>Elinize Geçecek Net TL</Text>
