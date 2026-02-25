@@ -41,11 +41,14 @@ function parseTrNumber(input: string): number {
 
   let s = raw.replace(/\s+/g, "");
 
+  // TR format: 1.234,56  ->  1234.56
   if (s.includes(".") && s.includes(",")) {
     s = s.replace(/\./g, "").replace(",", ".");
   } else if (s.includes(".")) {
+    // Tek nokta varsa: genelde binlik ayırıcı gibi kullanılmış olabilir
     s = s.replace(/\./g, "");
   } else if (s.includes(",")) {
+    // Virgül -> ondalık
     s = s.replace(",", ".");
   }
 
@@ -54,13 +57,47 @@ function parseTrNumber(input: string): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-// Anapara input'u için: sadece rakamları al, TR formatında binlik ayırıcıyla göster
+// Anapara: sadece rakam al, 100000 -> 100.000 gibi göster
 function formatThousandsTR(input: string): string {
   const digitsOnly = (input ?? "").replace(/\D+/g, "");
   if (!digitsOnly) return "";
   const n = parseInt(digitsOnly, 10);
   if (!Number.isFinite(n)) return "";
   return new Intl.NumberFormat("tr-TR").format(n);
+}
+
+// Gün: sadece rakam
+function digitsOnly(text: string): string {
+  return (text ?? "").replace(/\D+/g, "");
+}
+
+// ✅ Faiz: sadece rakam + virgül.
+// - Noktayı (.) otomatik kaldırır
+// - Birden fazla virgüle izin vermez
+function formatRateTR(input: string): string {
+  let s = (input ?? "").toString();
+
+  // Noktaları tamamen kaldır
+  s = s.replace(/\./g, "");
+
+  // Sadece rakam ve virgül kalsın
+  s = s.replace(/[^0-9,]/g, "");
+
+  // Birden fazla virgül varsa ilkini bırak, diğerlerini kaldır
+  const firstCommaIndex = s.indexOf(",");
+  if (firstCommaIndex !== -1) {
+    const before = s.slice(0, firstCommaIndex + 1);
+    const after = s.slice(firstCommaIndex + 1).replace(/,/g, "");
+    s = before + after;
+  }
+
+  // Virgülle başlayamasın: ",5" yazarsa "0,5" yap
+  if (s.startsWith(",")) s = "0" + s;
+
+  // Çok uzun saçmalamasın diye (isteğe bağlı limit)
+  if (s.length > 7) s = s.slice(0, 7);
+
+  return s;
 }
 
 function getStopajPctForTlDepositDays(days: number): number {
@@ -96,29 +133,23 @@ function formatTL(n: number): string {
   return new Intl.NumberFormat("tr-TR").format(rounded);
 }
 
-// ✅ sadece rakam tutan gün input'u (stopaj preview için stabil)
-function digitsOnly(text: string): string {
-  return (text ?? "").replace(/\D+/g, "");
-}
-
 export default function App() {
   const [principalText, setPrincipalText] = useState("500.000");
-  const [rateText, setRateText] = useState("45");
-  const [selectedDays, setSelectedDays] = useState<32 | 92 | 180 | "custom">(32);
 
-  // Özel gün alanı: yazdıkça state değişsin ki stopaj anında güncellensin
+  // ✅ Başlangıç örneği: 42,5
+  const [rateText, setRateText] = useState("42,5");
+
+  const [selectedDays, setSelectedDays] = useState<32 | 92 | 180 | "custom">(32);
   const [customDaysText, setCustomDaysText] = useState("32");
 
-  // Net sonuçlar sadece "Neti Hesapla" ile güncellenir (mikro akış)
   const [result, setResult] = useState(() =>
     calcNetDeposit({
       principal: 500000,
-      annualRatePct: 45,
+      annualRatePct: 42.5,
       days: 32,
     })
   );
 
-  // ✅ Vade değeri: butondan veya özel gün input'undan anlık hesaplanır
   const daysValue = useMemo(() => {
     if (selectedDays === "custom") {
       const d = parseInt(digitsOnly(customDaysText), 10);
@@ -127,7 +158,6 @@ export default function App() {
     return selectedDays;
   }, [selectedDays, customDaysText]);
 
-  // ✅ Stopaj preview: vade değişince anında değişir (Hesapla gerekmez)
   const stopajPreviewPct = useMemo(() => {
     const d = daysValue > 0 ? daysValue : 32;
     return getStopajPctForTlDepositDays(d);
@@ -135,7 +165,7 @@ export default function App() {
 
   const onCalculate = () => {
     const principal = parseTrNumber(principalText);
-    const annualRatePct = parseTrNumber(rateText);
+    const annualRatePct = parseTrNumber(rateText); // "42,5" -> 42.5
     const days = daysValue;
 
     const res = calcNetDeposit({ principal, annualRatePct, days });
@@ -178,11 +208,14 @@ export default function App() {
               <Text style={styles.label}>Faiz Oranı (%)</Text>
               <TextInput
                 value={rateText}
-                onChangeText={setRateText}
+                onChangeText={(t) => setRateText(formatRateTR(t))}
                 keyboardType="numeric"
-                placeholder="Örnek: 45"
+                placeholder="Örnek: 42,5"
                 style={styles.input}
               />
+              <Text style={styles.smallHint}>
+                Ondalık için virgül kullanın (ör. 37,5).
+              </Text>
             </View>
 
             <View style={styles.field}>
@@ -302,6 +335,12 @@ const styles = StyleSheet.create({
     paddingVertical: 10,
     fontSize: 16,
     color: "#111827",
+  },
+
+  smallHint: {
+    marginTop: 4,
+    fontSize: 12,
+    color: "#6B7280",
   },
 
   pills: { flexDirection: "row", gap: 8, flexWrap: "wrap" },
