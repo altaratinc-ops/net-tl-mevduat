@@ -24,35 +24,35 @@ const INFO_LAST_UPDATED = "2026-02-25";
 
 // TL mevduat stopaj oranları (vade bazlı)
 const STOPAJ_TL_UP_TO_6M = 17.5; // <=180
-const STOPAJ_TL_UP_TO_1Y = 15;   // 181-365
-const STOPAJ_TL_OVER_1Y = 10;    // >365
+const STOPAJ_TL_UP_TO_1Y = 15; // 181-365
+const STOPAJ_TL_OVER_1Y = 10; // >365
 
 // TCMB politika faizi (bilgi amaçlı)
 const TCMB_POLICY_RATE_PCT = 37;
 const TCMB_POLICY_RATE_NOTE_DATE = "2026-01-22";
 
 const DEFAULT_PRINCIPAL = 500000; // 500.000 TL
-const DEFAULT_RATE = 42.5;        // %42,5
-const DEFAULT_DAYS = 32;          // 32 gün
+const DEFAULT_RATE = 42.5; // %42,5
+const DEFAULT_DAYS = 32;
 
 function clampNonNegative(n: number): number {
   return Number.isFinite(n) && n > 0 ? n : 0;
 }
 
-// TR format TL
 function formatTL(n: number): string {
   const rounded = Math.round(Number.isFinite(n) ? n : 0);
   return new Intl.NumberFormat("tr-TR").format(rounded);
 }
 
-// Anapara: sadece rakamı alıp integer yap
+// Anapara: "500.000" -> 500000 (tam sayı)
 function parsePrincipalInt(input: string): number {
   const digits = (input ?? "").toString().replace(/\D+/g, "");
   const n = parseInt(digits, 10);
   return Number.isFinite(n) ? n : 0;
 }
 
-// Anapara input'u: TR binlik format (500000 -> 500.000)
+// Anapara input: sadece rakamı al, TR formatla (500000 -> 500.000)
+// Kullanıcı virgüle basarsa yok sayarız (biz zaten nokta formatlayacağız)
 function formatThousandsTR(input: string): string {
   let s = (input ?? "").toString();
   s = s.replace(/,/g, "");
@@ -71,9 +71,11 @@ function digitsOnly(text: string): string {
 // Faiz inputu: '.' -> ',' yap, sadece rakam+virgül, tek virgül
 function formatRateTR(input: string): string {
   let s = (input ?? "").toString();
-  s = s.replace(/\./g, ",");
-  s = s.replace(/[^0-9,]/g, "");
 
+  s = s.replace(/\./g, ","); // nokta basarsa virgül olsun
+  s = s.replace(/[^0-9,]/g, ""); // sadece rakam ve virgül
+
+  // tek virgül
   const firstCommaIndex = s.indexOf(",");
   if (firstCommaIndex !== -1) {
     const before = s.slice(0, firstCommaIndex + 1);
@@ -81,17 +83,21 @@ function formatRateTR(input: string): string {
     s = before + after;
   }
 
+  // ",5" -> "0,5"
   if (s.startsWith(",")) s = "0" + s;
+
   return s;
 }
 
-// Faiz parse: "42,5" -> 42.5
+// Faiz parse: "42,5" -> 42.5, "42.5" -> 42.5
 function parseRateNumber(input: string): number {
   const raw = (input ?? "").toString().trim();
   if (!raw) return 0;
+
   let s = raw.replace(/\s+/g, "");
   s = s.replace(",", ".");
   s = s.replace(/[^0-9.]/g, "");
+
   const n = parseFloat(s);
   return Number.isFinite(n) ? n : 0;
 }
@@ -118,13 +124,14 @@ function calcNetDeposit(params: {
   const gross = P * r * (d / 365);
   const withholding = gross * s;
   const net = gross - withholding;
+
   const eay = P > 0 ? (net / P) * (365 / d) * 100 : 0;
 
   return { gross, withholding, net, eay, stopajPctUsed };
 }
 
 export default function App() {
-  // ✅ İlk değerleri number kaynaktan üret: ilk açılışta kesin doğru olur
+  // İlk değerleri number kaynaktan üret (ilk açılışta saçma sonuç çıkmasın)
   const [principalText, setPrincipalText] = useState(() => formatTL(DEFAULT_PRINCIPAL));
   const [rateText, setRateText] = useState(() => DEFAULT_RATE.toString().replace(".", ","));
 
@@ -144,7 +151,7 @@ export default function App() {
     return getStopajPctForTlDepositDays(d);
   }, [daysValue]);
 
-  // ✅ Otomatik hesap
+  // Otomatik hesap (buton yok)
   const result = useMemo(() => {
     const principal = parsePrincipalInt(principalText);
     const annualRatePct = parseRateNumber(rateText);
@@ -238,14 +245,24 @@ export default function App() {
                 />
               )}
 
-              <Text style={styles.infoText}>
-                Stopaj (TL mevduat, vade bazlı): %{stopajPreviewPct} — Vade: {daysValue || DEFAULT_DAYS} gün — Güncelleme:{" "}
-                {INFO_LAST_UPDATED}
-              </Text>
+              {/* ✅ Daha “önemli” bilgi kartı (net kazancı gölgelemeden) */}
+              <View style={styles.infoCard}>
+                <Text style={styles.infoTitle}>Bilgi (Resmi oranlara göre kontrol edin)</Text>
 
-              <Text style={styles.infoText}>
-                TCMB politika faizi (bilgi): %{TCMB_POLICY_RATE_PCT} — Not tarihi: {TCMB_POLICY_RATE_NOTE_DATE}
-              </Text>
+                <Text style={styles.infoLine}>
+                  Stopaj (TL mevduat, vade bazlı): %{stopajPreviewPct} — Vade: {daysValue || DEFAULT_DAYS} gün
+                </Text>
+
+                <Text style={styles.infoLine}>
+                  TCMB Politika Faizi (bilgi): %{TCMB_POLICY_RATE_PCT} — Not tarihi: {TCMB_POLICY_RATE_NOTE_DATE}
+                </Text>
+
+                <Text style={styles.infoLine}>Güncelleme Tarihi: {INFO_LAST_UPDATED}</Text>
+
+                <Text style={styles.infoHint}>
+                  Not: Bu bilgiler bilgilendirme amaçlıdır, karar için resmi kaynakları esas alın.
+                </Text>
+              </View>
             </View>
           </View>
 
@@ -329,11 +346,30 @@ const styles = StyleSheet.create({
   pillText: { color: "#374151", fontWeight: "700" },
   pillTextActive: { color: "#111827" },
 
-  infoText: {
-    marginTop: 8,
+  // ✅ Bilgi kartı
+  infoCard: {
+    marginTop: 12,
+    backgroundColor: "#EEF2FF",
+    borderRadius: 12,
+    padding: 12,
+    borderWidth: 1,
+    borderColor: "#C7D2FE",
+  },
+  infoTitle: {
+    fontSize: 12,
+    fontWeight: "800",
+    color: "#1E3A8A",
+    marginBottom: 6,
+  },
+  infoLine: {
     fontSize: 12,
     color: "#1E3A8A",
-    textAlign: "center",
+    marginBottom: 3,
+  },
+  infoHint: {
+    marginTop: 6,
+    fontSize: 11,
+    color: "#334155",
   },
 
   resultWrap: { marginTop: 22, alignItems: "center" },
