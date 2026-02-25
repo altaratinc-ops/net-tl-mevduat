@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 import {
   SafeAreaView,
   View,
@@ -10,6 +10,7 @@ import {
   Platform,
   ScrollView,
   StatusBar,
+  Animated,
 } from "react-native";
 
 type CalcResult = {
@@ -20,20 +21,17 @@ type CalcResult = {
   stopajPctUsed: number;
 };
 
-const INFO_LAST_UPDATED = "2026-02-25"; // (istersen ileride tekrar kullanırız ama ekranda göstermiyoruz)
-
-// TL mevduat stopaj oranları (vade bazlı)
 const STOPAJ_TL_UP_TO_6M = 17.5; // <=180
 const STOPAJ_TL_UP_TO_1Y = 15; // 181-365
 const STOPAJ_TL_OVER_1Y = 10; // >365
 
-// TCMB bilgi (takvim: 2026)
+// TCMB bilgi
 const TCMB_POLICY_RATE_PCT = 37;
 const TCMB_POLICY_RATE_DECISION_DATE = "22 Ocak 2026";
 const TCMB_NEXT_MPC_MEETING_DATE = "12 Mart 2026";
 
-const DEFAULT_PRINCIPAL = 500000; // 500.000 TL
-const DEFAULT_RATE = 42.5; // %42,5
+const DEFAULT_PRINCIPAL = 500000; // 500.000
+const DEFAULT_RATE = 42.5; // 42,5
 const DEFAULT_DAYS = 32;
 
 function clampNonNegative(n: number): number {
@@ -45,14 +43,12 @@ function formatTL(n: number): string {
   return new Intl.NumberFormat("tr-TR").format(rounded);
 }
 
-// Anapara: "500.000" -> 500000
 function parsePrincipalInt(input: string): number {
   const digits = (input ?? "").toString().replace(/\D+/g, "");
   const n = parseInt(digits, 10);
   return Number.isFinite(n) ? n : 0;
 }
 
-// Anapara input: TR format (binlik)
 function formatThousandsTR(input: string): string {
   let s = (input ?? "").toString();
   s = s.replace(/,/g, "");
@@ -63,12 +59,10 @@ function formatThousandsTR(input: string): string {
   return new Intl.NumberFormat("tr-TR").format(n);
 }
 
-// Gün: sadece rakam
 function digitsOnly(text: string): string {
   return (text ?? "").replace(/\D+/g, "");
 }
 
-// Faiz inputu: '.' -> ',' yap, sadece rakam+virgül, tek virgül
 function formatRateTR(input: string): string {
   let s = (input ?? "").toString();
 
@@ -86,7 +80,6 @@ function formatRateTR(input: string): string {
   return s;
 }
 
-// Faiz parse: "42,5" -> 42.5
 function parseRateNumber(input: string): number {
   const raw = (input ?? "").toString().trim();
   if (!raw) return 0;
@@ -134,6 +127,13 @@ export default function App() {
   const [selectedDays, setSelectedDays] = useState<32 | 92 | 180 | "custom">(DEFAULT_DAYS);
   const [customDaysText, setCustomDaysText] = useState(() => String(DEFAULT_DAYS));
 
+  // Input focus state (premium)
+  const [focus, setFocus] = useState<{ principal: boolean; rate: boolean; days: boolean }>({
+    principal: false,
+    rate: false,
+    days: false,
+  });
+
   const daysValue = useMemo(() => {
     if (selectedDays === "custom") {
       const d = parseInt(digitsOnly(customDaysText), 10);
@@ -142,7 +142,6 @@ export default function App() {
     return selectedDays;
   }, [selectedDays, customDaysText]);
 
-  // Otomatik hesap
   const result = useMemo(() => {
     const principal = parsePrincipalInt(principalText);
     const annualRatePct = parseRateNumber(rateText);
@@ -150,14 +149,25 @@ export default function App() {
     return calcNetDeposit({ principal, annualRatePct, days });
   }, [principalText, rateText, daysValue]);
 
+  // ✅ Net kart pulse animasyonu
+  const pulse = useRef(new Animated.Value(1)).current;
+  const pulseKey = useMemo(
+    () => `${principalText}|${rateText}|${daysValue}`,
+    [principalText, rateText, daysValue]
+  );
+
+  useEffect(() => {
+    Animated.sequence([
+      Animated.timing(pulse, { toValue: 0.985, duration: 90, useNativeDriver: true }),
+      Animated.timing(pulse, { toValue: 1, duration: 120, useNativeDriver: true }),
+    ]).start();
+  }, [pulseKey, pulse]);
+
   return (
     <SafeAreaView style={styles.safe}>
       <View style={styles.androidTopPad} />
 
-      <KeyboardAvoidingView
-        style={styles.safe}
-        behavior={Platform.OS === "ios" ? "padding" : undefined}
-      >
+      <KeyboardAvoidingView style={styles.safe} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
           <Text style={styles.title} numberOfLines={2} adjustsFontSizeToFit>
             Net TL Mevduat
@@ -175,7 +185,9 @@ export default function App() {
                 onChangeText={(t) => setPrincipalText(formatThousandsTR(t))}
                 keyboardType="numeric"
                 placeholder="Örnek: 100.000"
-                style={styles.input}
+                style={[styles.input, focus.principal && styles.inputFocus]}
+                onFocus={() => setFocus((p) => ({ ...p, principal: true }))}
+                onBlur={() => setFocus((p) => ({ ...p, principal: false }))}
               />
             </View>
 
@@ -186,11 +198,11 @@ export default function App() {
                 onChangeText={(t) => setRateText(formatRateTR(t))}
                 keyboardType="numeric"
                 placeholder="Örnek: 42,5"
-                style={styles.input}
+                style={[styles.input, focus.rate && styles.inputFocus]}
+                onFocus={() => setFocus((p) => ({ ...p, rate: true }))}
+                onBlur={() => setFocus((p) => ({ ...p, rate: false }))}
               />
-              <Text style={styles.smallHint}>
-                Ondalık için virgül kullanın (örn: 37,5). Nokta yazarsanız otomatik virgüle çevrilir.
-              </Text>
+              <Text style={styles.smallHint}>Ondalık için virgül kullanın (örn: 37,5).</Text>
             </View>
 
             <View style={styles.field}>
@@ -213,14 +225,11 @@ export default function App() {
                   );
                 })}
 
-                {/* ✅ Özel butonu DURUYOR */}
                 <Pressable
                   onPress={() => setSelectedDays("custom")}
                   style={[styles.pill, selectedDays === "custom" && styles.pillActive]}
                 >
-                  <Text style={[styles.pillText, selectedDays === "custom" && styles.pillTextActive]}>
-                    Özel
-                  </Text>
+                  <Text style={[styles.pillText, selectedDays === "custom" && styles.pillTextActive]}>Özel</Text>
                 </Pressable>
               </View>
 
@@ -230,14 +239,16 @@ export default function App() {
                   onChangeText={(t) => setCustomDaysText(digitsOnly(t))}
                   keyboardType="numeric"
                   placeholder="Gün girin (ör. 400)"
-                  style={[styles.input, { marginTop: 10 }]}
+                  style={[styles.input, { marginTop: 10 }, focus.days && styles.inputFocus]}
+                  onFocus={() => setFocus((p) => ({ ...p, days: true }))}
+                  onBlur={() => setFocus((p) => ({ ...p, days: false }))}
                 />
               )}
             </View>
           </View>
 
-          {/* ✅ NET KAZANÇ: vade tıklamalarının ALTINDA, brüt detayların ÜSTÜNDE */}
-          <View style={styles.netCard}>
+          {/* ✅ Net kart (vadenin altında) + pulse */}
+          <Animated.View style={[styles.netCard, { transform: [{ scale: pulse }] }]}>
             <Text style={styles.netValue}>+ {formatTL(result.net)} TL</Text>
             <Text style={styles.netLabel}>Net Kazanç</Text>
 
@@ -246,33 +257,25 @@ export default function App() {
               <Text style={styles.netMetaDot}>•</Text>
               <Text style={styles.netMetaText}>Stopaj: %{result.stopajPctUsed}</Text>
             </View>
-          </View>
+          </Animated.View>
 
           {/* DETAY */}
           <View style={styles.breakdown}>
             <Text style={styles.breakRow}>Brüt getiri: {formatTL(result.gross)} TL</Text>
             <Text style={styles.breakRow}>Stopaj kesintisi: {formatTL(result.withholding)} TL</Text>
-
-            {/* Stopaj kesintisinin altına vade + stopaj */}
             <Text style={styles.breakSubRow}>
               Vade: {daysValue || DEFAULT_DAYS} gün — Uygulanan stopaj: %{result.stopajPctUsed}
             </Text>
-
             <Text style={styles.breakRow}>Efektif yıllık (EAY): {result.eay.toFixed(1)}%</Text>
           </View>
 
-          {/* BİLGİ KARTI EN AŞAĞIDA (daha net içerik) */}
+          {/* TCMB açık bilgi */}
           <View style={styles.infoCard}>
             <Text style={styles.infoTitle}>TCMB Bilgisi</Text>
-
             <Text style={styles.infoLine}>
               Politika faizi: %{TCMB_POLICY_RATE_PCT} (PPK karar tarihi: {TCMB_POLICY_RATE_DECISION_DATE})
             </Text>
-
-            <Text style={styles.infoLine}>
-              Sonraki PPK toplantısı: {TCMB_NEXT_MPC_MEETING_DATE}
-            </Text>
-
+            <Text style={styles.infoLine}>Sonraki PPK toplantısı: {TCMB_NEXT_MPC_MEETING_DATE}</Text>
             <Text style={styles.infoHint}>
               Bu araç bilgilendirme amaçlıdır. Nihai getiri ve vergi uygulamaları ilgili finans kuruluşu tarafından
               belirlenir.
@@ -310,6 +313,15 @@ const styles = StyleSheet.create({
     fontSize: 16,
     color: "#111827",
   },
+  inputFocus: {
+    borderColor: "#111827",
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#000",
+    shadowOpacity: 0.06,
+    shadowRadius: 8,
+    shadowOffset: { width: 0, height: 4 },
+    elevation: 1,
+  },
 
   smallHint: { marginTop: 4, fontSize: 12, color: "#6B7280" },
 
@@ -326,7 +338,6 @@ const styles = StyleSheet.create({
   pillText: { color: "#374151", fontWeight: "700" },
   pillTextActive: { color: "#111827" },
 
-  // Premium Net Card (abartısız)
   netCard: {
     marginTop: 18,
     backgroundColor: "#F0FDF4",
