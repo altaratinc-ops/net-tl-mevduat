@@ -21,11 +21,11 @@ type CalcResult = {
   stopajPctUsed: number;
 };
 
-const STOPAJ_TL_UP_TO_6M = 17.5; // <=180
-const STOPAJ_TL_UP_TO_1Y = 15; // 181-365
-const STOPAJ_TL_OVER_1Y = 10; // >365
+const STOPAJ_TL_UP_TO_6M = 17.5; // <=180 gün
+const STOPAJ_TL_UP_TO_1Y = 15; // 181-365 gün
+const STOPAJ_TL_OVER_1Y = 10; // >365 gün
 
-// TCMB bilgi (sende daha sonra güncellersin)
+// TCMB bilgi (manuel güncellersin)
 const TCMB_POLICY_RATE_PCT = 37;
 const TCMB_POLICY_RATE_DECISION_DATE = "22 Ocak 2026";
 const TCMB_NEXT_MPC_MEETING_DATE = "12 Mart 2026";
@@ -34,73 +34,12 @@ const DEFAULT_PRINCIPAL = 500000;
 const DEFAULT_RATE = 42.5;
 const DEFAULT_DAYS = 32;
 
-// ✅ (2) PİYASA ORANLARI — MANUEL (şimdilik 5 ürün bazlı mini aralık)
+// ✅ PİYASA ARALIĞI — MANUEL (bankasız, düşük risk)
 const MARKET_RANGES_LAST_UPDATED = "26 Şubat 2026";
 const MARKET_RANGES: Array<{ days: 32 | 92 | 180; min: number; max: number; note?: string }> = [
-  {
-    days: 32,
-    min: 38.5,
-    max: 41.75,
-    note: "Seçili 5 ürün bazlı (başlangıç)",
-  },
-  { days: 92, min: 0, max: 0, note: "Henüz eklenmedi" },
-  { days: 180, min: 0, max: 0, note: "Henüz eklenmedi" },
-];
-
-type BankOffer = {
-  bank: string;
-  product: string;
-  welcome: boolean;
-  rates: Partial<Record<32 | 92 | 180, number>>;
-  note?: string;
-  source?: string; // sadece bilgi
-};
-
-// ✅ (3) BANKA ORANLARI — MANUEL (5 banka / 32 gün)
-// Kaynak: ENUYGUN Finans ürün sayfaları + QNB resmi sayfa teyidi
-const BANK_OFFERS_LAST_UPDATED = "26 Şubat 2026";
-
-const BANK_OFFERS: BankOffer[] = [
-  {
-    bank: "Akbank",
-    product: "Serbest Plus Hesap",
-    welcome: false,
-    rates: { 32: 40.0 },
-    note: "32 gün",
-    source: "ENUYGUN Finans",
-  },
-  {
-    bank: "Garanti BBVA",
-    product: "E-Vadeli Hesap",
-    welcome: false,
-    rates: { 32: 38.5 },
-    note: "32 gün",
-    source: "ENUYGUN Finans",
-  },
-  {
-    bank: "ING",
-    product: "Turuncu Hesap",
-    welcome: false,
-    rates: { 32: 40.0 },
-    note: "32 gün",
-    source: "ENUYGUN Finans",
-  },
-  {
-    bank: "DenizBank",
-    product: "E-Mevduat (Hoş Geldin)",
-    welcome: true,
-    rates: { 32: 40.25 },
-    note: "32–45 gün (kampanya koşullu)",
-    source: "ENUYGUN Finans",
-  },
-  {
-    bank: "QNB",
-    product: "Kazandıran Günlük Hesap",
-    welcome: false,
-    rates: { 32: 41.75 },
-    note: "32 gün",
-    source: "ENUYGUN Finans / QNB",
-  },
+  { days: 32, min: 0, max: 0, note: "Henüz girilmedi" },
+  { days: 92, min: 0, max: 0, note: "Henüz girilmedi" },
+  { days: 180, min: 0, max: 0, note: "Henüz girilmedi" },
 ];
 
 function clampNonNegative(n: number): number {
@@ -189,6 +128,7 @@ function calcNetDeposit(params: {
   return { gross, withholding, net, eay, stopajPctUsed };
 }
 
+// Web (Vercel) clipboard
 async function copyToClipboard(text: string) {
   const nav: any = typeof navigator !== "undefined" ? navigator : null;
 
@@ -231,7 +171,6 @@ export default function App() {
   });
 
   const [copied, setCopied] = useState(false);
-  const [sortHighToLow, setSortHighToLow] = useState(true);
 
   const daysValue = useMemo(() => {
     if (selectedDays === "custom") {
@@ -284,6 +223,7 @@ export default function App() {
     setTimeout(() => setCopied(false), 1000);
   }
 
+  // Piyasa aralığı yalnız 32/92/180 için
   const selectedFixedDays = useMemo(() => {
     if (selectedDays === 32 || selectedDays === 92 || selectedDays === 180) return selectedDays;
     const d = daysValue || DEFAULT_DAYS;
@@ -300,17 +240,6 @@ export default function App() {
     return best;
   }, [selectedDays, daysValue]);
 
-  const sortedOffersForSelectedDays = useMemo(() => {
-    const d = selectedFixedDays;
-    const withRate = BANK_OFFERS.filter((o) => typeof o.rates[d] === "number");
-    withRate.sort((a, b) => {
-      const ra = a.rates[d] ?? -Infinity;
-      const rb = b.rates[d] ?? -Infinity;
-      return sortHighToLow ? rb - ra : ra - rb;
-    });
-    return withRate;
-  }, [selectedFixedDays, sortHighToLow]);
-
   const marketRangeForSelectedDays = useMemo(() => {
     return MARKET_RANGES.find((x) => x.days === selectedFixedDays) ?? null;
   }, [selectedFixedDays]);
@@ -321,13 +250,14 @@ export default function App() {
 
       <KeyboardAvoidingView style={styles.safe} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView contentContainerStyle={styles.container} keyboardShouldPersistTaps="handled">
-          <Text style={styles.title} numberOfLines={2} adjustsFontSizeToFit}>
+          <Text style={styles.title} numberOfLines={2} adjustsFontSizeToFit>
             Net TL Mevduat
           </Text>
           <Text style={styles.subtitle}>Elinize Geçecek Net TL</Text>
 
           <Text style={styles.exampleNote}>Örnek değerler doludur. Değiştirince otomatik hesaplanır.</Text>
 
+          {/* FORM */}
           <View style={styles.form}>
             <View style={styles.field}>
               <Text style={styles.label}>Anapara (TL)</Text>
@@ -398,6 +328,7 @@ export default function App() {
             </View>
           </View>
 
+          {/* NET KART */}
           <Animated.View style={[styles.netCard, { transform: [{ scale: pulse }] }]}>
             <Pressable
               onPress={onCopyNet}
@@ -433,6 +364,7 @@ export default function App() {
             <Text style={styles.microNote}>Hesaplama: basit faiz (365 gün)</Text>
           </Animated.View>
 
+          {/* DETAY */}
           <View style={styles.breakdown}>
             <Text style={styles.breakRow}>Brüt getiri: {formatTL(result.gross)} TL</Text>
             <Text style={styles.breakRow}>Stopaj kesintisi: {formatTL(result.withholding)} TL</Text>
@@ -442,9 +374,10 @@ export default function App() {
             <Text style={styles.breakRow}>Efektif yıllık (EAY): {result.eay.toFixed(1)}%</Text>
           </View>
 
+          {/* PİYASA ARALIĞI */}
           <View style={styles.sectionCard}>
             <View style={styles.sectionHeaderRow}>
-              <Text style={styles.sectionTitle}>Piyasa Oranları (Manuel)</Text>
+              <Text style={styles.sectionTitle}>Piyasa Aralığı (Bilgilendirme)</Text>
               <Text style={styles.sectionRight}>Son güncelleme: {MARKET_RANGES_LAST_UPDATED}</Text>
             </View>
 
@@ -465,65 +398,15 @@ export default function App() {
                 ) : null}
               </View>
             ) : (
-              <Text style={styles.sectionDesc}>Bu vade için aralık henüz eklenmedi.</Text>
+              <Text style={styles.sectionDesc}>Bu vade için aralık henüz girilmedi.</Text>
             )}
 
             <Text style={styles.sectionTiny}>
-              Bilgi amaçlıdır; oranlar kampanya/kanal/müşteriye göre değişebilir.
+              Not: Bu aralık bilgilendirme amaçlıdır. Oranlar bankaya/kanala/müşteriye göre değişebilir.
             </Text>
           </View>
 
-          <View style={styles.sectionCard}>
-            <View style={styles.sectionHeaderRow}>
-              <Text style={styles.sectionTitle}>Banka Oranları (Manuel)</Text>
-              <Text style={styles.sectionRight}>Son güncelleme: {BANK_OFFERS_LAST_UPDATED}</Text>
-            </View>
-
-            <View style={styles.sortRow}>
-              <Text style={styles.sectionDesc}>
-                Gösterilen vade: <Text style={styles.bold}>{selectedFixedDays} gün</Text>
-              </Text>
-
-              <Pressable onPress={() => setSortHighToLow((v) => !v)} style={styles.sortBtn}>
-                <Text style={styles.sortBtnText}>{sortHighToLow ? "En yüksek → düşük" : "En düşük → yüksek"}</Text>
-              </Pressable>
-            </View>
-
-            {sortedOffersForSelectedDays.length === 0 ? (
-              <Text style={styles.sectionDesc}>Bu vade için banka oranı eklenmemiş.</Text>
-            ) : (
-              <View style={{ gap: 10, marginTop: 10 }}>
-                {sortedOffersForSelectedDays.map((o, idx) => {
-                  const r = o.rates[selectedFixedDays] as number;
-                  return (
-                    <View key={`${o.bank}-${o.product}-${idx}`} style={styles.bankRow}>
-                      <View style={{ flex: 1 }}>
-                        <View style={styles.bankTitleRow}>
-                          <Text style={styles.bankName}>{o.bank}</Text>
-                          {o.welcome ? <Text style={styles.badge}>Hoşgeldin</Text> : null}
-                        </View>
-                        <Text style={styles.bankSub}>
-                          {o.product}
-                          {o.note ? ` • ${o.note}` : ""}
-                          {o.source ? ` • ${o.source}` : ""}
-                        </Text>
-                      </View>
-
-                      <View style={styles.bankRight}>
-                        <Text style={styles.bankRate}>%{fmtPctTR(r)}</Text>
-                        <Text style={styles.bankDays}>{selectedFixedDays}g</Text>
-                      </View>
-                    </View>
-                  );
-                })}
-              </View>
-            )}
-
-            <Text style={styles.sectionTiny}>
-              Bilgilendirme amaçlıdır. Nihai oran/şartlar için bankanın resmi kanallarını esas alın.
-            </Text>
-          </View>
-
+          {/* TCMB */}
           <View style={styles.infoCard}>
             <Text style={styles.infoTitle}>TCMB Bilgisi</Text>
             <Text style={styles.infoLine}>
@@ -531,8 +414,8 @@ export default function App() {
             </Text>
             <Text style={styles.infoLine}>Sonraki PPK toplantısı: {TCMB_NEXT_MPC_MEETING_DATE}</Text>
             <Text style={styles.infoHint}>
-              Bu araç bilgilendirme amaçlıdır. Nihai getiri ve vergi uygulamaları ilgili finans kuruluşu tarafından
-              belirlenir.
+              Bu araç yatırım danışmanlığı değildir. Hesaplamalar bilgilendirme amaçlıdır; faiz oranı/stopaj/koşullar
+              değişebilir. Nihai tutar ve koşullar için resmi kaynakları esas alın.
             </Text>
           </View>
 
@@ -676,45 +559,6 @@ const styles = StyleSheet.create({
   },
   rangeText: { fontSize: 12, color: "#111827" },
   rangeStrong: { fontWeight: "900" },
-
-  sortRow: { marginTop: 8, flexDirection: "row", alignItems: "center", justifyContent: "space-between", gap: 10 },
-  sortBtn: {
-    paddingHorizontal: 10,
-    paddingVertical: 8,
-    borderRadius: 999,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    backgroundColor: "#F9FAFB",
-  },
-  sortBtnText: { fontSize: 11, color: "#111827", fontWeight: "800" },
-
-  bankRow: {
-    flexDirection: "row",
-    alignItems: "center",
-    gap: 10,
-    padding: 10,
-    borderRadius: 12,
-    borderWidth: 1,
-    borderColor: "#E5E7EB",
-    backgroundColor: "#FFFFFF",
-  },
-  bankTitleRow: { flexDirection: "row", alignItems: "center", gap: 8, flexWrap: "wrap" },
-  bankName: { fontSize: 13, fontWeight: "900", color: "#111827" },
-  bankSub: { marginTop: 2, fontSize: 11, color: "#6B7280" },
-  badge: {
-    fontSize: 10,
-    fontWeight: "900",
-    color: "#065F46",
-    backgroundColor: "#F0FDF4",
-    borderWidth: 1,
-    borderColor: "#BBF7D0",
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: 999,
-  },
-  bankRight: { alignItems: "flex-end" },
-  bankRate: { fontSize: 14, fontWeight: "900", color: "#111827" },
-  bankDays: { fontSize: 11, color: "#6B7280", marginTop: 2 },
 
   infoCard: {
     marginTop: 18,
