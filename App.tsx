@@ -149,7 +149,7 @@ export default function App() {
     return calcNetDeposit({ principal, annualRatePct, days });
   }, [principalText, rateText, daysValue]);
 
-  // ✅ Net kart pulse animasyonu
+  // Net kart pulse animasyonu
   const pulse = useRef(new Animated.Value(1)).current;
   const pulseKey = useMemo(
     () => `${principalText}|${rateText}|${daysValue}`,
@@ -247,7 +247,7 @@ export default function App() {
             </View>
           </View>
 
-          {/* ✅ Net kart (vadenin altında) + pulse */}
+          {/* Net kart + pulse */}
           <Animated.View style={[styles.netCard, { transform: [{ scale: pulse }] }]}>
             <Text style={styles.netValue}>+ {formatTL(result.net)} TL</Text>
             <Text style={styles.netLabel}>Net Kazanç</Text>
@@ -290,7 +290,8 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: "#FFFFFF" },
+  // ✅ PREMIUM BACKGROUND: saf beyaz yerine kırık beyaz
+  safe: { flex: 1, backgroundColor: "#F9FAFB" },
   androidTopPad: { height: Platform.OS === "android" ? StatusBar.currentHeight ?? 0 : 0 },
 
   container: { padding: 18, paddingBottom: 34 },
@@ -306,7 +307,7 @@ const styles = StyleSheet.create({
   input: {
     borderWidth: 1,
     borderColor: "#E5E7EB",
-    backgroundColor: "#FAFAFA",
+    backgroundColor: "#FFFFFF",
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 11,
@@ -315,7 +316,6 @@ const styles = StyleSheet.create({
   },
   inputFocus: {
     borderColor: "#111827",
-    backgroundColor: "#FFFFFF",
     shadowColor: "#000",
     shadowOpacity: 0.06,
     shadowRadius: 8,
