@@ -30,8 +30,8 @@ const TCMB_POLICY_RATE_PCT = 37;
 const TCMB_POLICY_RATE_DECISION_DATE = "22 Ocak 2026";
 const TCMB_NEXT_MPC_MEETING_DATE = "12 Mart 2026";
 
-const DEFAULT_PRINCIPAL = 500000; // 500.000
-const DEFAULT_RATE = 42.5; // 42,5
+const DEFAULT_PRINCIPAL = 500000;
+const DEFAULT_RATE = 42.5;
 const DEFAULT_DAYS = 32;
 
 function clampNonNegative(n: number): number {
@@ -127,7 +127,7 @@ export default function App() {
   const [selectedDays, setSelectedDays] = useState<32 | 92 | 180 | "custom">(DEFAULT_DAYS);
   const [customDaysText, setCustomDaysText] = useState(() => String(DEFAULT_DAYS));
 
-  // Input focus state (premium)
+  // Input focus state
   const [focus, setFocus] = useState<{ principal: boolean; rate: boolean; days: boolean }>({
     principal: false,
     rate: false,
@@ -149,7 +149,7 @@ export default function App() {
     return calcNetDeposit({ principal, annualRatePct, days });
   }, [principalText, rateText, daysValue]);
 
-  // Net kart pulse animasyonu
+  // Pulse
   const pulse = useRef(new Animated.Value(1)).current;
   const pulseKey = useMemo(
     () => `${principalText}|${rateText}|${daysValue}`,
@@ -247,15 +247,19 @@ export default function App() {
             </View>
           </View>
 
-          {/* Net kart + pulse */}
+          {/* NET KART */}
           <Animated.View style={[styles.netCard, { transform: [{ scale: pulse }] }]}>
             <Text style={styles.netValue}>+ {formatTL(result.net)} TL</Text>
             <Text style={styles.netLabel}>Net Kazanç</Text>
 
-            <View style={styles.netMetaRow}>
-              <Text style={styles.netMetaText}>Vade: {daysValue || DEFAULT_DAYS} gün</Text>
-              <Text style={styles.netMetaDot}>•</Text>
-              <Text style={styles.netMetaText}>Stopaj: %{result.stopajPctUsed}</Text>
+            {/* ✅ Premium pill’ler */}
+            <View style={styles.metaPills}>
+              <View style={styles.metaPill}>
+                <Text style={styles.metaPillText}>Vade: {daysValue || DEFAULT_DAYS} gün</Text>
+              </View>
+              <View style={styles.metaPill}>
+                <Text style={styles.metaPillText}>Stopaj: %{result.stopajPctUsed}</Text>
+              </View>
             </View>
           </Animated.View>
 
@@ -269,7 +273,7 @@ export default function App() {
             <Text style={styles.breakRow}>Efektif yıllık (EAY): {result.eay.toFixed(1)}%</Text>
           </View>
 
-          {/* TCMB açık bilgi */}
+          {/* TCMB bilgi */}
           <View style={styles.infoCard}>
             <Text style={styles.infoTitle}>TCMB Bilgisi</Text>
             <Text style={styles.infoLine}>
@@ -290,7 +294,6 @@ export default function App() {
 }
 
 const styles = StyleSheet.create({
-  // ✅ PREMIUM BACKGROUND: saf beyaz yerine kırık beyaz
   safe: { flex: 1, backgroundColor: "#F9FAFB" },
   androidTopPad: { height: Platform.OS === "android" ? StatusBar.currentHeight ?? 0 : 0 },
 
@@ -355,9 +358,18 @@ const styles = StyleSheet.create({
   },
   netValue: { fontSize: 40, fontWeight: "900", color: "#166534" },
   netLabel: { marginTop: 2, fontSize: 14, color: "#6B7280" },
-  netMetaRow: { flexDirection: "row", alignItems: "center", marginTop: 8 },
-  netMetaText: { fontSize: 12, color: "#065F46", fontWeight: "700" },
-  netMetaDot: { marginHorizontal: 8, color: "#065F46", fontWeight: "900" },
+
+  // ✅ yeni pill alanı
+  metaPills: { flexDirection: "row", gap: 8, marginTop: 10, flexWrap: "wrap", justifyContent: "center" },
+  metaPill: {
+    backgroundColor: "#FFFFFF",
+    borderWidth: 1,
+    borderColor: "#BBF7D0",
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 999,
+  },
+  metaPillText: { fontSize: 12, color: "#065F46", fontWeight: "800" },
 
   breakdown: { marginTop: 16, alignSelf: "stretch", gap: 6 },
   breakRow: { fontSize: 13, color: "#374151", textAlign: "center" },
