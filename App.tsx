@@ -20,7 +20,6 @@ type CalcResult = {
   stopajPctUsed: number;
 };
 
-// Bilgi tarihleri (manuel)
 const INFO_LAST_UPDATED = "2026-02-25";
 
 // TL mevduat stopaj oranları (vade bazlı)
@@ -40,7 +39,7 @@ function clampNonNegative(n: number): number {
  * TR sayı parse:
  * - "500.000" => 500000
  * - "42,5" => 42.5
- * - "42.5" => 42.5 (destekliyoruz ama faiz inputunda bunu otomatik virgüle çevireceğiz)
+ * - "42.5" => 42.5 (faiz inputunda dot->comma yapacağız ama parse yine de destekler)
  */
 function parseTrNumber(input: string): number {
   const raw = (input ?? "").toString().trim();
@@ -52,14 +51,11 @@ function parseTrNumber(input: string): number {
   if (s.includes(".") && s.includes(",")) {
     s = s.replace(/\./g, "").replace(",", ".");
   } else if (s.includes(",")) {
-    // sadece virgül varsa ondalık
     s = s.replace(",", ".");
   } else {
-    // sadece nokta varsa: ondalık olabilir (42.5) ya da binlik (500.000)
-    // burada güvenli şekilde: birden fazla nokta varsa binlik say
+    // sadece nokta varsa: tek nokta (ondalık) olabilir, çok nokta (binlik) olabilir
     const dotCount = (s.match(/\./g) || []).length;
     if (dotCount >= 2) s = s.replace(/\./g, "");
-    // tek nokta varsa olduğu gibi bırak (42.5)
   }
 
   s = s.replace(/[^0-9.]/g, "");
@@ -67,20 +63,14 @@ function parseTrNumber(input: string): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-// Anapara: sadece rakam topla, TR formatla (1000000 -> 1.000.000)
-// Ayrıca kullanıcı virgül basarsa (,) görmezden gel (biz otomatik nokta koyuyoruz)
+// Anapara input'u: kullanıcı virgüle basarsa bile, sadece rakamları alıp TR formatla
 function formatThousandsTR(input: string): string {
   let s = (input ?? "").toString();
-
-  // Kullanıcı virgül basarsa boşver (binlik ayırıcıyı biz koyacağız)
-  s = s.replace(/,/g, "");
-
+  s = s.replace(/,/g, ""); // virgülü yok say
   const digitsOnly = s.replace(/\D+/g, "");
   if (!digitsOnly) return "";
-
   const n = parseInt(digitsOnly, 10);
   if (!Number.isFinite(n)) return "";
-
   return new Intl.NumberFormat("tr-TR").format(n);
 }
 
@@ -89,20 +79,14 @@ function digitsOnly(text: string): string {
   return (text ?? "").replace(/\D+/g, "");
 }
 
-/**
- * Faiz inputu:
- * - Nokta (.) basarsa otomatik virgül (,) yapsın
- * - Sadece rakam + virgül kalsın
- * - 1 tane virgül olsun
- * - ",5" -> "0,5"
- */
+// Faiz: nokta basılırsa virgüle çevir, sadece 1 virgül olsun
 function formatRateTR(input: string): string {
   let s = (input ?? "").toString();
 
   // Noktayı virgüle çevir
   s = s.replace(/\./g, ",");
 
-  // Sadece rakam ve virgül
+  // Sadece rakam + virgül
   s = s.replace(/[^0-9,]/g, "");
 
   // Tek virgül
@@ -113,6 +97,7 @@ function formatRateTR(input: string): string {
     s = before + after;
   }
 
+  // ",5" -> "0,5"
   if (s.startsWith(",")) s = "0" + s;
 
   return s;
@@ -153,8 +138,6 @@ function formatTL(n: number): string {
 
 export default function App() {
   const [principalText, setPrincipalText] = useState("500.000");
-
-  // Örnek: 42,5 ile başlasın
   const [rateText, setRateText] = useState("42,5");
 
   const [selectedDays, setSelectedDays] = useState<32 | 92 | 180 | "custom">(32);
@@ -185,7 +168,7 @@ export default function App() {
 
   const onCalculate = () => {
     const principal = parseTrNumber(principalText);
-    const annualRatePct = parseTrNumber(rateText); // "42,5" -> 42.5
+    const annualRatePct = parseTrNumber(rateText);
     const days = daysValue;
 
     const res = calcNetDeposit({ principal, annualRatePct, days });
@@ -234,7 +217,7 @@ export default function App() {
                 style={styles.input}
               />
               <Text style={styles.smallHint}>
-                Ondalık için virgül kullanın (ör. 37,5). Nokta yazarsanız otomatik virgüle çevrilir.
+                Ondalık için virgül kullanın (örn: 37,5). Nokta yazarsanız otomatik virgüle çevrilir.
               </Text>
             </View>
 
@@ -253,9 +236,7 @@ export default function App() {
                       }}
                       style={[styles.pill, active && styles.pillActive]}
                     >
-                      <Text style={[styles.pillText, active && styles.pillTextActive]}>
-                        {d}
-                      </Text>
+                      <Text style={[styles.pillText, active && styles.pillTextActive]}>{d}</Text>
                     </Pressable>
                   );
                 })}
@@ -264,12 +245,7 @@ export default function App() {
                   onPress={() => setSelectedDays("custom")}
                   style={[styles.pill, selectedDays === "custom" && styles.pillActive]}
                 >
-                  <Text
-                    style={[
-                      styles.pillText,
-                      selectedDays === "custom" && styles.pillTextActive,
-                    ]}
-                  >
+                  <Text style={[styles.pillText, selectedDays === "custom" && styles.pillTextActive]}>
                     Özel
                   </Text>
                 </Pressable>
@@ -291,8 +267,7 @@ export default function App() {
               </Text>
 
               <Text style={styles.infoText}>
-                TCMB politika faizi (bilgi): %{TCMB_POLICY_RATE_PCT} — Not tarihi:{" "}
-                {TCMB_POLICY_RATE_NOTE_DATE}
+                TCMB politika faizi (bilgi): %{TCMB_POLICY_RATE_PCT} — Not tarihi: {TCMB_POLICY_RATE_NOTE_DATE}
               </Text>
 
               <Text style={styles.infoText}>
@@ -313,15 +288,9 @@ export default function App() {
             <Text style={styles.netLabel}>Net Kazanç</Text>
 
             <View style={styles.breakdown}>
-              <Text style={styles.breakRow}>
-                Brüt getiri: {formatTL(result.gross)} TL
-              </Text>
-              <Text style={styles.breakRow}>
-                Stopaj kesintisi: {formatTL(result.withholding)} TL
-              </Text>
-              <Text style={styles.breakRow}>
-                Efektif yıllık (EAY): {result.eay.toFixed(1)}%
-              </Text>
+              <Text style={styles.breakRow}>Brüt getiri: {formatTL(result.gross)} TL</Text>
+              <Text style={styles.breakRow}>Stopaj kesintisi: {formatTL(result.withholding)} TL</Text>
+              <Text style={styles.breakRow}>Efektif yıllık (EAY): {result.eay.toFixed(1)}%</Text>
             </View>
 
             <Text style={styles.disclaimer}>
