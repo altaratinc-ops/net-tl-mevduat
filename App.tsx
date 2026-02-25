@@ -23,9 +23,9 @@ type CalcResult = {
 const INFO_LAST_UPDATED = "2026-02-25";
 
 // TL mevduat stopaj oranları (vade bazlı)
-const STOPAJ_TL_UP_TO_6M = 17.5;
-const STOPAJ_TL_UP_TO_1Y = 15;
-const STOPAJ_TL_OVER_1Y = 10;
+const STOPAJ_TL_UP_TO_6M = 17.5; // <=180
+const STOPAJ_TL_UP_TO_1Y = 15;   // 181-365
+const STOPAJ_TL_OVER_1Y = 10;    // >365
 
 // TCMB politika faizi (bilgi amaçlı)
 const TCMB_POLICY_RATE_PCT = 37;
@@ -35,25 +35,20 @@ function clampNonNegative(n: number): number {
   return Number.isFinite(n) && n > 0 ? n : 0;
 }
 
-/**
- * TR sayı parse:
- * - "500.000" => 500000
- * - "42,5" => 42.5
- * - "42.5" => 42.5 (faiz inputunda dot->comma yapacağız ama parse yine de destekler)
- */
 function parseTrNumber(input: string): number {
   const raw = (input ?? "").toString().trim();
   if (!raw) return 0;
 
   let s = raw.replace(/\s+/g, "");
 
-  // Hem . hem , varsa: . binlik, , ondalık varsay
+  // "1.234,56" -> "1234.56"
   if (s.includes(".") && s.includes(",")) {
     s = s.replace(/\./g, "").replace(",", ".");
   } else if (s.includes(",")) {
+    // "42,5" -> "42.5"
     s = s.replace(",", ".");
   } else {
-    // sadece nokta varsa: tek nokta (ondalık) olabilir, çok nokta (binlik) olabilir
+    // "500.000" gibi (birden fazla nokta) -> "500000"
     const dotCount = (s.match(/\./g) || []).length;
     if (dotCount >= 2) s = s.replace(/\./g, "");
   }
@@ -63,10 +58,10 @@ function parseTrNumber(input: string): number {
   return Number.isFinite(n) ? n : 0;
 }
 
-// Anapara input'u: kullanıcı virgüle basarsa bile, sadece rakamları alıp TR formatla
+// Anapara: sadece rakamı al, TR formatla. Virgül vs yazsa da yok say.
 function formatThousandsTR(input: string): string {
   let s = (input ?? "").toString();
-  s = s.replace(/,/g, ""); // virgülü yok say
+  s = s.replace(/,/g, "");
   const digitsOnly = s.replace(/\D+/g, "");
   if (!digitsOnly) return "";
   const n = parseInt(digitsOnly, 10);
@@ -79,17 +74,13 @@ function digitsOnly(text: string): string {
   return (text ?? "").replace(/\D+/g, "");
 }
 
-// Faiz: nokta basılırsa virgüle çevir, sadece 1 virgül olsun
+// Faiz: '.' -> ',' yap, sadece rakam+virgül, tek virgül
 function formatRateTR(input: string): string {
   let s = (input ?? "").toString();
 
-  // Noktayı virgüle çevir
-  s = s.replace(/\./g, ",");
+  s = s.replace(/\./g, ",");      // nokta basarsa virgül olsun
+  s = s.replace(/[^0-9,]/g, "");  // sadece rakam ve virgül
 
-  // Sadece rakam + virgül
-  s = s.replace(/[^0-9,]/g, "");
-
-  // Tek virgül
   const firstCommaIndex = s.indexOf(",");
   if (firstCommaIndex !== -1) {
     const before = s.slice(0, firstCommaIndex + 1);
@@ -97,9 +88,7 @@ function formatRateTR(input: string): string {
     s = before + after;
   }
 
-  // ",5" -> "0,5"
-  if (s.startsWith(",")) s = "0" + s;
-
+  if (s.startsWith(",")) s = "0" + s; // ",5" -> "0,5"
   return s;
 }
 
@@ -137,20 +126,12 @@ function formatTL(n: number): string {
 }
 
 export default function App() {
+  // ✅ Placeholder değil, gerçek başlangıç değerleri (0 olmaz)
   const [principalText, setPrincipalText] = useState("500.000");
   const [rateText, setRateText] = useState("42,5");
 
   const [selectedDays, setSelectedDays] = useState<32 | 92 | 180 | "custom">(32);
   const [customDaysText, setCustomDaysText] = useState("32");
-
-  // Net sonuçlar sadece "Neti Hesapla" ile güncellenir
-  const [result, setResult] = useState(() =>
-    calcNetDeposit({
-      principal: 500000,
-      annualRatePct: 42.5,
-      days: 32,
-    })
-  );
 
   const daysValue = useMemo(() => {
     if (selectedDays === "custom") {
@@ -160,20 +141,20 @@ export default function App() {
     return selectedDays;
   }, [selectedDays, customDaysText]);
 
-  // Stopaj yazısı vade değişince anında güncellensin
+  // ✅ Stopaj preview anında değişir
   const stopajPreviewPct = useMemo(() => {
     const d = daysValue > 0 ? daysValue : 32;
     return getStopajPctForTlDepositDays(d);
   }, [daysValue]);
 
-  const onCalculate = () => {
+  // ✅ SONUÇLAR otomatik hesaplanır (buton yok)
+  const result = useMemo(() => {
     const principal = parseTrNumber(principalText);
     const annualRatePct = parseTrNumber(rateText);
-    const days = daysValue;
+    const days = daysValue > 0 ? daysValue : 32;
 
-    const res = calcNetDeposit({ principal, annualRatePct, days });
-    setResult(res);
-  };
+    return calcNetDeposit({ principal, annualRatePct, days });
+  }, [principalText, rateText, daysValue]);
 
   const netPrefix = result.net > 0 ? "+ " : "";
 
@@ -192,7 +173,7 @@ export default function App() {
           <Text style={styles.subtitle}>Elinize Geçecek Net TL</Text>
 
           <Text style={styles.exampleNote}>
-            Örnek değerler doludur. Değiştirip hesaplayın.
+            Örnek değerler doludur. Değiştirince otomatik hesaplanır.
           </Text>
 
           <View style={styles.form}>
@@ -269,15 +250,7 @@ export default function App() {
               <Text style={styles.infoText}>
                 TCMB politika faizi (bilgi): %{TCMB_POLICY_RATE_PCT} — Not tarihi: {TCMB_POLICY_RATE_NOTE_DATE}
               </Text>
-
-              <Text style={styles.infoText}>
-                Net sonuçlar “Neti Hesapla” ile güncellenir.
-              </Text>
             </View>
-
-            <Pressable onPress={onCalculate} style={styles.button}>
-              <Text style={styles.buttonText}>Neti Hesapla</Text>
-            </Pressable>
           </View>
 
           <View style={styles.resultWrap}>
@@ -366,15 +339,6 @@ const styles = StyleSheet.create({
     color: "#1E3A8A",
     textAlign: "center",
   },
-
-  button: {
-    marginTop: 4,
-    backgroundColor: "#111827",
-    borderRadius: 12,
-    paddingVertical: 12,
-    alignItems: "center",
-  },
-  buttonText: { color: "#FFFFFF", fontSize: 16, fontWeight: "800" },
 
   resultWrap: { marginTop: 22, alignItems: "center" },
   netValue: { fontSize: 40, fontWeight: "900", color: "#166534" },
