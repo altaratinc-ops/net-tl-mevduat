@@ -39,6 +39,9 @@ const SEO_TITLE = "Net Mevduat – TL Vadeli Mevduat Net Getiri Hesaplama";
 const SEO_DESCRIPTION =
   "TL vadeli mevduat net getiri hesaplama aracı. Stopaj dahil net kazancınızı hızlı ve sade şekilde hesaplayın. 32/92/180 gün için piyasa aralığı bilgilendirmesi içerir.";
 
+// ✅ Glow’un başlık+butonların üstüne binmesini engelleyen “başlangıç” offset’i
+const GLOW_TOP_OFFSET = 96;
+
 type CalcResult = {
   gross: number;
   withholding: number;
@@ -78,9 +81,12 @@ function digitsOnly(text: string): string {
 
 function formatRateTR(input: string): string {
   let s = (input ?? "").toString();
+  // nokta basılırsa virgüle çevir
   s = s.replace(/\./g, ",");
+  // sadece rakam ve virgül
   s = s.replace(/[^0-9,]/g, "");
 
+  // tek virgül kalsın
   const firstCommaIndex = s.indexOf(",");
   if (firstCommaIndex !== -1) {
     const before = s.slice(0, firstCommaIndex + 1);
@@ -243,7 +249,7 @@ export default function App() {
   const isDark = theme === "dark";
   const t = isDark ? dark : light;
 
-  // ✅ FIX 1: scroll to result için ref’ler
+  // ✅ Scroll-to-result
   const scrollRef = useRef<ScrollView | null>(null);
   const netCardYRef = useRef<number>(0);
 
@@ -359,7 +365,6 @@ export default function App() {
     return `📌 Seçili vade: ${effectiveDays} gün → Piyasa bant: %${range.min}–%${range.max}`;
   }, [marketBucket, range, effectiveDays]);
 
-  // ✅ FIX 1: netCard konumunu ölç + oraya scroll
   const onNetCardLayout = (e: LayoutChangeEvent) => {
     netCardYRef.current = e.nativeEvent.layout.y;
   };
@@ -452,7 +457,7 @@ export default function App() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={[styles.hero, { borderColor: t.border }]}>
-            {/* ✅ FIX 2: glowları arka layer’a al (üst kata çıkmaz) */}
+            {/* ✅ Glow artık “arka katman”: başlık & butonların ÜSTÜNE çıkamaz */}
             <View pointerEvents="none" style={styles.heroBgLayer}>
               <View
                 style={[
@@ -468,8 +473,8 @@ export default function App() {
               />
             </View>
 
-            {/* içerik */}
-            <View style={styles.heroContentLayer}>
+            {/* ✅ İçerik katmanı */}
+            <View style={styles.heroContent}>
               <View style={styles.topBar}>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.brand, { color: t.text }]}>Net Mevduat</Text>
@@ -644,7 +649,9 @@ export default function App() {
                           },
                         ]}
                       >
-                        <Text style={{ color: selectedDays === "custom" ? t.text : t.muted, fontWeight: "900" }}>Özel</Text>
+                        <Text style={{ color: selectedDays === "custom" ? t.text : t.muted, fontWeight: "900" }}>
+                          Özel
+                        </Text>
                       </Pressable>
                     </View>
 
@@ -664,7 +671,7 @@ export default function App() {
                   </View>
                 </View>
 
-                {/* ✅ FIX 1: Hemen Hesapla → sonucu gösterilen yere kaydır */}
+                {/* CTA: Hemen Hesapla -> net karta kaydır + hafif flash */}
                 <View style={{ marginTop: 12 }}>
                   <Pressable
                     onPress={() => {
@@ -715,33 +722,54 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   container: { padding: 18, paddingBottom: 34 },
 
-  // ✅ FIX 2: hero’yu relative yap + layer’lar ekle
   hero: { borderWidth: 1, borderRadius: 22, padding: 14, overflow: "hidden", position: "relative" },
 
-  // glow arka layer
+  // ✅ Glow’ların bulunduğu “arka layer”
   heroBgLayer: {
-    ...StyleSheet.absoluteFillObject,
+    position: "absolute",
+    left: 0,
+    right: 0,
+    bottom: 0,
+    top: GLOW_TOP_OFFSET, // glow, başlık+butonların ALTINDAN başlar
     zIndex: 0,
   },
-  // içerik üst layer
-  heroContentLayer: {
-    zIndex: 2,
+
+  // ✅ Tüm UI içeriği (başlık, buton, kartlar) üst katman
+  heroContent: {
+    zIndex: 1,
   },
 
   heroGlow: { position: "absolute", width: 420, height: 420, borderRadius: 999, top: -220, left: -180 },
   heroGlow2: { position: "absolute", width: 380, height: 380, borderRadius: 999, bottom: -220, right: -180 },
 
-  topBar: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 12 },
+  topBar: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 12 },
   brand: { fontSize: 26, fontWeight: "900" },
-  tagline: { marginTop: 2, fontSize: 12, fontWeight: "800" },
 
-  themeBtn: { width: 44, height: 44, borderRadius: 14, borderWidth: 1, alignItems: "center", justifyContent: "center" },
+  // ✅ overlap fix: satır yüksekliği + alt boşluk
+  tagline: { marginTop: 2, fontSize: 12, fontWeight: "800", lineHeight: 16, marginBottom: 6 },
 
-  menuRow: { marginTop: 12, flexDirection: "row", gap: 8, borderTopWidth: 1, paddingTop: 12 },
+  themeBtn: {
+    width: 44,
+    height: 44,
+    borderRadius: 14,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+
+  menuRow: { marginTop: 8, flexDirection: "row", gap: 8, borderTopWidth: 1, paddingTop: 12 },
   menuBtn: { flex: 1, borderWidth: 1, borderRadius: 14, paddingVertical: 10, alignItems: "center", justifyContent: "center" },
   menuText: { fontSize: 12, fontWeight: "900" },
 
-  netCard: { marginTop: 14, borderRadius: 20, borderWidth: 1, paddingVertical: 14, paddingHorizontal: 14, alignItems: "center", position: "relative" },
+  netCard: {
+    marginTop: 14,
+    borderRadius: 20,
+    borderWidth: 1,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    alignItems: "center",
+    position: "relative",
+  },
   netTitle: { fontSize: 12, fontWeight: "900" },
   netValue: { fontSize: 42, fontWeight: "900", marginTop: 6 },
 
