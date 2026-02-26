@@ -43,6 +43,11 @@ const MARKET_RANGES: Array<{ days: 32 | 92 | 180; min: number; max: number }> = 
   { days: 180, min: 35, max: 43 },
 ];
 
+// ✅ SEO (Title + Description)
+const SEO_TITLE = "Net Mevduat – TL Vadeli Mevduat Net Getiri Hesaplama";
+const SEO_DESCRIPTION =
+  "TL vadeli mevduat net getiri hesaplama aracı. Stopaj dahil net kazancınızı hızlı ve sade şekilde hesaplayın. 32/92/180 gün için piyasa aralığı bilgilendirmesi içerir.";
+
 function clampNonNegative(n: number): number {
   return Number.isFinite(n) && n > 0 ? n : 0;
 }
@@ -108,11 +113,7 @@ function getStopajPctForTlDepositDays(days: number): number {
   return STOPAJ_TL_OVER_1Y;
 }
 
-function calcNetDeposit(params: {
-  principal: number;
-  annualRatePct: number;
-  days: number;
-}): CalcResult {
+function calcNetDeposit(params: { principal: number; annualRatePct: number; days: number }): CalcResult {
   const P = clampNonNegative(params.principal);
   const r = clampNonNegative(params.annualRatePct) / 100;
   const d = Math.max(1, Math.floor(clampNonNegative(params.days)));
@@ -153,7 +154,6 @@ async function copyToClipboard(text: string) {
 }
 
 function fmtPctTR(n: number) {
-  // 38 -> "38" / 42.5 -> "42,5"
   const s = Number.isFinite(n) ? n.toString() : "0";
   return s.includes(".") ? s.replace(".", ",") : s;
 }
@@ -182,6 +182,24 @@ export default function App() {
 
   const [copied, setCopied] = useState(false);
 
+  // ✅ SEO effect (web’de çalışır, mobilde sorun çıkarmaz)
+  useEffect(() => {
+    if (typeof document === "undefined") return;
+
+    document.title = SEO_TITLE;
+
+    // meta description yoksa ekle, varsa güncelle
+    const existing = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;
+    if (existing) {
+      existing.setAttribute("content", SEO_DESCRIPTION);
+    } else {
+      const meta = document.createElement("meta");
+      meta.name = "description";
+      meta.content = SEO_DESCRIPTION;
+      document.head.appendChild(meta);
+    }
+  }, []);
+
   const daysValue = useMemo(() => {
     if (selectedDays === "custom") {
       const d = parseInt(digitsOnly(customDaysText), 10);
@@ -203,10 +221,7 @@ export default function App() {
 
   // pulse anim
   const pulse = useRef(new Animated.Value(1)).current;
-  const pulseKey = useMemo(
-    () => `${principalText}|${rateText}|${daysValue}`,
-    [principalText, rateText, daysValue]
-  );
+  const pulseKey = useMemo(() => `${principalText}|${rateText}|${daysValue}`, [principalText, rateText, daysValue]);
 
   useEffect(() => {
     Animated.sequence([
@@ -559,10 +574,7 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     gap: 8,
   },
-  rangeLineActive: {
-    borderColor: "#BBF7D0",
-    backgroundColor: "#F0FDF4",
-  },
+  rangeLineActive: { borderColor: "#BBF7D0", backgroundColor: "#F0FDF4" },
   rangeLineText: { fontSize: 12, color: "#111827", fontWeight: "800" },
   rangeLineTextActive: { color: "#065F46" },
   appliesBadge: {
