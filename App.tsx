@@ -11,6 +11,7 @@ import {
   ScrollView,
   StatusBar,
   Animated,
+  LayoutChangeEvent,
 } from "react-native";
 
 /**
@@ -69,7 +70,6 @@ function parsePrincipalInt(input: string): number {
 // anapara input: sadece rakam, görüntüde binlik ayırıcı
 function formatThousandsTR(input: string): string {
   let s = (input ?? "").toString();
-  // virgül yazarsa da yok say
   s = s.replace(/,/g, "");
   const digits = s.replace(/\D+/g, "");
   if (!digits) return "";
@@ -170,6 +170,7 @@ export default function App() {
   // Theme toggle (default: dark)
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const isDark = theme === "dark";
+  const t = isDark ? dark : light;
 
   // Inputs
   const [principalText, setPrincipalText] = useState(() => formatTLInt(DEFAULT_PRINCIPAL));
@@ -248,31 +249,124 @@ export default function App() {
     setTimeout(() => setCopied(false), 900);
   }
 
-  const t = isDark ? dark : light;
+  // ---- Scroll navigation (Landing menü + CTA) ----
+  const scrollRef = useRef<ScrollView>(null);
+  const sectionY = useRef<{ calc?: number; market?: number; info?: number; seo?: number }>({});
+
+  const onSectionLayout =
+    (key: keyof typeof sectionY.current) =>
+    (e: LayoutChangeEvent) => {
+      sectionY.current[key] = e.nativeEvent.layout.y;
+    };
+
+  const scrollToKey = (key: keyof typeof sectionY.current) => {
+    const y = sectionY.current[key];
+    if (typeof y !== "number") return;
+    scrollRef.current?.scrollTo({ y: Math.max(0, y - 10), animated: true });
+  };
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: t.bg }]}>
       <View style={{ height: Platform.OS === "android" ? StatusBar.currentHeight ?? 0 : 0 }} />
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <ScrollView contentContainerStyle={[styles.container, { backgroundColor: t.bg }]} keyboardShouldPersistTaps="handled">
-          {/* Header */}
-          <View style={styles.headerRow}>
-            <View>
-              <Text style={[styles.title, { color: t.text }]} numberOfLines={1} adjustsFontSizeToFit>
-                Net Mevduat
-              </Text>
-              <Text style={[styles.subtitle, { color: t.muted }]}>Elinize geçecek net TL</Text>
+        <ScrollView
+          ref={scrollRef}
+          contentContainerStyle={[styles.container, { backgroundColor: t.bg }]}
+          keyboardShouldPersistTaps="handled"
+        >
+          {/* ====== HERO / LANDING HEADER ====== */}
+          <View style={[styles.hero, { borderColor: t.border }]}>
+            {/* Subtle glow background */}
+            <View style={[styles.heroGlow, { backgroundColor: isDark ? "rgba(64,247,178,0.10)" : "rgba(11,143,90,0.10)" }]} />
+            <View style={[styles.heroGlow2, { backgroundColor: isDark ? "rgba(64,247,178,0.06)" : "rgba(11,143,90,0.06)" }]} />
+
+            {/* Top bar */}
+            <View style={styles.topBar}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.brand, { color: t.text }]}>Net Mevduat</Text>
+                <Text style={[styles.tagline, { color: t.muted }]}>TL vadeli mevduat net getiri hesaplama</Text>
+              </View>
+
+              <Pressable
+                onPress={() => setTheme((p) => (p === "dark" ? "light" : "dark"))}
+                style={[styles.themeBtn, { backgroundColor: t.card, borderColor: t.border }]}
+              >
+                <Text style={{ color: t.text, fontWeight: "900" }}>{isDark ? "🌙" : "☀️"}</Text>
+              </Pressable>
             </View>
 
-            <Pressable
-              onPress={() => setTheme((p) => (p === "dark" ? "light" : "dark"))}
-              style={[styles.themeBtn, { backgroundColor: t.card, borderColor: t.border }]}
+            {/* Mini menu */}
+            <View style={[styles.menuRow, { borderColor: t.border }]}>
+              <Pressable onPress={() => scrollToKey("calc")} style={[styles.menuBtn, { backgroundColor: t.menuBg, borderColor: t.border }]}>
+                <Text style={[styles.menuText, { color: t.text }]}>Hesapla</Text>
+              </Pressable>
+              <Pressable onPress={() => scrollToKey("market")} style={[styles.menuBtn, { backgroundColor: t.menuBg, borderColor: t.border }]}>
+                <Text style={[styles.menuText, { color: t.text }]}>Piyasa</Text>
+              </Pressable>
+              <Pressable onPress={() => scrollToKey("info")} style={[styles.menuBtn, { backgroundColor: t.menuBg, borderColor: t.border }]}>
+                <Text style={[styles.menuText, { color: t.text }]}>Bilgi</Text>
+              </Pressable>
+            </View>
+
+            {/* Hero Net Card */}
+            <Animated.View
+              style={[
+                styles.heroNetCard,
+                { backgroundColor: t.netBg, borderColor: t.netBorder, transform: [{ scale: pulse }] },
+              ]}
             >
-              <Text style={{ color: t.text, fontWeight: "900" }}>{isDark ? "🌙" : "☀️"}</Text>
-            </Pressable>
+              <Pressable onPress={onCopy} disabled={!canCalculate} style={[styles.copyBtn, { borderColor: t.netBorder }]}>
+                <Text style={{ color: canCalculate ? t.accent : t.placeholder, fontWeight: "900" }}>
+                  {copied ? "✓" : "⧉"}
+                </Text>
+              </Pressable>
+
+              <Text style={[styles.heroNetTitle, { color: t.muted }]}>Elinize geçecek net TL</Text>
+
+              <Text style={[styles.netValue, { color: canCalculate ? t.accent : t.placeholder }]}>
+                + {formatTLInt(canCalculate ? result.net : 0)} TL
+              </Text>
+
+              <View style={styles.metaRow}>
+                <View style={[styles.metaPill, { backgroundColor: t.metaBg, borderColor: t.netBorder }]}>
+                  <Text style={{ color: t.muted, fontWeight: "900", fontSize: 12 }}>Vade: {effectiveDays} gün</Text>
+                </View>
+                <View style={[styles.metaPill, { backgroundColor: t.metaBg, borderColor: t.netBorder }]}>
+                  <Text style={{ color: t.muted, fontWeight: "900", fontSize: 12 }}>Stopaj: %{result.stopajPctUsed}</Text>
+                </View>
+              </View>
+
+              <Text style={[styles.micro, { color: t.muted }]}>
+                Bilgilendirme amaçlıdır. Sonuçlar girdiğiniz faiz oranına göre hesaplanır.
+              </Text>
+            </Animated.View>
+
+            {/* CTA */}
+            <View style={styles.ctaRow}>
+              <Pressable
+                onPress={() => scrollToKey("calc")}
+                style={[
+                  styles.ctaPrimary,
+                  { backgroundColor: t.accent, borderColor: t.accentBorder },
+                ]}
+              >
+                <Text style={[styles.ctaPrimaryText, { color: isDark ? "#062217" : "#FFFFFF" }]}>
+                  Hemen Hesapla
+                </Text>
+              </Pressable>
+
+              <Pressable
+                onPress={() => scrollToKey("market")}
+                style={[styles.ctaSecondary, { borderColor: t.border, backgroundColor: t.card }]}
+              >
+                <Text style={[styles.ctaSecondaryText, { color: t.text }]}>Piyasa Aralığı</Text>
+              </Pressable>
+            </View>
           </View>
 
-          {/* Inputs card */}
+          {/* ====== HESAPLAMA (section) ====== */}
+          <View onLayout={onSectionLayout("calc")} />
+
           <View style={[styles.card, { backgroundColor: t.card, borderColor: t.border }]}>
             <Text style={[styles.cardTitle, { color: t.text }]}>Hesaplama</Text>
             <Text style={[styles.hint, { color: t.muted }]}>Örnek değerler dolu. Değiştirince otomatik hesaplar.</Text>
@@ -357,40 +451,7 @@ export default function App() {
             </View>
           </View>
 
-          {/* Net card */}
-          <Animated.View
-            style={[
-              styles.netCard,
-              { backgroundColor: t.netBg, borderColor: t.netBorder, transform: [{ scale: pulse }] },
-            ]}
-          >
-            <Pressable onPress={onCopy} disabled={!canCalculate} style={[styles.copyBtn, { borderColor: t.netBorder }]}>
-              <Text style={{ color: canCalculate ? t.accent : t.placeholder, fontWeight: "900" }}>
-                {copied ? "✓" : "⧉"}
-              </Text>
-            </Pressable>
-
-            <Text style={[styles.netValue, { color: canCalculate ? t.accent : t.placeholder }]}>
-              + {formatTLInt(canCalculate ? result.net : 0)} TL
-            </Text>
-            <View style={{ flexDirection: "row", alignItems: "center", gap: 10, marginTop: 6 }}>
-              <Text style={[styles.netLabel, { color: t.muted }]}>Net Kazanç</Text>
-              {copied ? <Text style={{ color: t.accent, fontWeight: "900", fontSize: 12 }}>Kopyalandı</Text> : null}
-            </View>
-
-            <View style={styles.metaRow}>
-              <View style={[styles.metaPill, { backgroundColor: t.metaBg, borderColor: t.netBorder }]}>
-                <Text style={{ color: t.muted, fontWeight: "900", fontSize: 12 }}>Vade: {effectiveDays} gün</Text>
-              </View>
-              <View style={[styles.metaPill, { backgroundColor: t.metaBg, borderColor: t.netBorder }]}>
-                <Text style={{ color: t.muted, fontWeight: "900", fontSize: 12 }}>Stopaj: %{result.stopajPctUsed}</Text>
-              </View>
-            </View>
-
-            <Text style={[styles.micro, { color: t.muted }]}>Hesaplama: basit faiz (365 gün) — bilgilendirme amaçlı</Text>
-          </Animated.View>
-
-          {/* Breakdown */}
+          {/* ====== DETAY ====== */}
           <View style={[styles.card, { backgroundColor: t.card, borderColor: t.border }]}>
             <Text style={[styles.cardTitle, { color: t.text }]}>Detay</Text>
             <Text style={[styles.line, { color: t.muted }]}>Brüt getiri: {formatTLInt(result.gross)} TL</Text>
@@ -401,7 +462,8 @@ export default function App() {
             <Text style={[styles.line, { color: t.muted }]}>Efektif yıllık (EAY): {result.eay.toFixed(1)}%</Text>
           </View>
 
-          {/* Market ranges */}
+          {/* ====== PİYASA ====== */}
+          <View onLayout={onSectionLayout("market")} />
           <View style={[styles.card, { backgroundColor: t.card, borderColor: t.border }]}>
             <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 10 }}>
               <Text style={[styles.cardTitle, { color: t.text }]}>Piyasa Aralığı</Text>
@@ -437,7 +499,7 @@ export default function App() {
 
             {marketBucket === null ? (
               <Text style={[styles.micro, { color: t.muted, marginTop: 12 }]}>
-                180 gün üzeri vadelerde oranlar banka/kampanya/koşullara göre çok daha değişken olabilir. Bu yüzden bu bölüm sabit aralık yerine bilgilendirme amaçlıdır.
+                180 gün üzeri vadelerde oranlar banka/kampanya/koşullara göre çok daha değişken olabilir. Bu bölüm sabit aralık yerine bilgilendirme amaçlıdır.
               </Text>
             ) : (
               <Text style={[styles.micro, { color: t.muted, marginTop: 12 }]}>
@@ -446,7 +508,8 @@ export default function App() {
             )}
           </View>
 
-          {/* TCMB info */}
+          {/* ====== BİLGİ ====== */}
+          <View onLayout={onSectionLayout("info")} />
           <View style={[styles.infoCard, { backgroundColor: t.infoBg, borderColor: t.infoBorder }]}>
             <Text style={{ color: t.text, fontWeight: "900", fontSize: 13 }}>TCMB Bilgisi</Text>
             <Text style={[styles.micro, { color: t.muted, marginTop: 6 }]}>
@@ -462,7 +525,8 @@ export default function App() {
             </Text>
           </View>
 
-          {/* SEO content block (Google için faydalı içerik) */}
+          {/* ====== SEO İÇERİK ====== */}
+          <View onLayout={onSectionLayout("seo")} />
           <View style={[styles.seoBlock, { backgroundColor: t.card, borderColor: t.border }]}>
             <Text style={[styles.seoH2, { color: t.text }]}>Vadeli Mevduat Nedir?</Text>
             <Text style={[styles.seoP, { color: t.muted }]}>
@@ -492,14 +556,67 @@ export default function App() {
 
 const styles = StyleSheet.create({
   safe: { flex: 1 },
+
   container: { padding: 18, paddingBottom: 34 },
 
-  headerRow: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", marginBottom: 12 },
-  title: { fontSize: 26, fontWeight: "900" },
-  subtitle: { marginTop: 2, fontSize: 13, fontWeight: "700" },
+  // HERO
+  hero: {
+    borderWidth: 1,
+    borderRadius: 22,
+    padding: 14,
+    overflow: "hidden",
+  },
+  heroGlow: {
+    position: "absolute",
+    width: 420,
+    height: 420,
+    borderRadius: 999,
+    top: -220,
+    left: -180,
+  },
+  heroGlow2: {
+    position: "absolute",
+    width: 380,
+    height: 380,
+    borderRadius: 999,
+    bottom: -220,
+    right: -180,
+  },
+  topBar: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 12 },
+  brand: { fontSize: 26, fontWeight: "900" },
+  tagline: { marginTop: 2, fontSize: 12, fontWeight: "800" },
 
   themeBtn: { width: 44, height: 44, borderRadius: 14, borderWidth: 1, alignItems: "center", justifyContent: "center" },
 
+  menuRow: {
+    marginTop: 12,
+    flexDirection: "row",
+    gap: 8,
+    borderTopWidth: 1,
+    paddingTop: 12,
+  },
+  menuBtn: {
+    flex: 1,
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingVertical: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  menuText: { fontSize: 12, fontWeight: "900" },
+
+  heroNetCard: {
+    marginTop: 14,
+    borderRadius: 20,
+    borderWidth: 1,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    alignItems: "center",
+    position: "relative",
+  },
+  heroNetTitle: { fontSize: 12, fontWeight: "900" },
+
+  // shared
   card: { marginTop: 14, borderRadius: 18, borderWidth: 1, padding: 14 },
   cardTitle: { fontSize: 14, fontWeight: "900" },
   hint: { marginTop: 6, fontSize: 12, fontWeight: "700" },
@@ -512,15 +629,6 @@ const styles = StyleSheet.create({
   pills: { flexDirection: "row", gap: 8, flexWrap: "wrap" },
   pill: { paddingHorizontal: 12, paddingVertical: 9, borderRadius: 999, borderWidth: 1 },
 
-  netCard: {
-    marginTop: 14,
-    borderRadius: 20,
-    borderWidth: 1,
-    paddingVertical: 14,
-    paddingHorizontal: 14,
-    alignItems: "center",
-    position: "relative",
-  },
   copyBtn: {
     position: "absolute",
     top: 12,
@@ -533,8 +641,7 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     backgroundColor: "rgba(255,255,255,0.06)",
   },
-  netValue: { fontSize: 42, fontWeight: "900" },
-  netLabel: { fontSize: 13, fontWeight: "800" },
+  netValue: { fontSize: 42, fontWeight: "900", marginTop: 6 },
 
   metaRow: { flexDirection: "row", gap: 8, marginTop: 12, flexWrap: "wrap", justifyContent: "center" },
   metaPill: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 7 },
@@ -542,7 +649,14 @@ const styles = StyleSheet.create({
   line: { marginTop: 8, fontSize: 13, fontWeight: "800", textAlign: "center" },
   lineStrong: { marginTop: 10, fontSize: 13, fontWeight: "900", textAlign: "center" },
 
-  rangeLine: { borderWidth: 1, borderRadius: 14, paddingVertical: 11, paddingHorizontal: 12, flexDirection: "row", justifyContent: "space-between" },
+  rangeLine: {
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingVertical: 11,
+    paddingHorizontal: 12,
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
 
   infoCard: { marginTop: 14, borderRadius: 18, borderWidth: 1, padding: 14 },
 
@@ -552,6 +666,26 @@ const styles = StyleSheet.create({
   seoP: { fontSize: 12, fontWeight: "700", lineHeight: 18 },
 
   footer: { marginTop: 16, textAlign: "center", fontSize: 11, fontWeight: "800" },
+
+  ctaRow: { marginTop: 14, flexDirection: "row", gap: 10 },
+  ctaPrimary: {
+    flex: 1,
+    borderRadius: 16,
+    paddingVertical: 12,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+  },
+  ctaPrimaryText: { fontSize: 13, fontWeight: "900" },
+  ctaSecondary: {
+    borderRadius: 16,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    alignItems: "center",
+    justifyContent: "center",
+    borderWidth: 1,
+  },
+  ctaSecondaryText: { fontSize: 13, fontWeight: "900" },
 });
 
 // Premium themes
@@ -579,6 +713,8 @@ const dark = {
 
   infoBg: "#0D1430",
   infoBorder: "#1B2442",
+
+  menuBg: "rgba(255,255,255,0.03)",
 };
 
 const light = {
@@ -605,4 +741,6 @@ const light = {
 
   infoBg: "#EEF2FF",
   infoBorder: "#D7DEFF",
+
+  menuBg: "#FFFFFF",
 };
