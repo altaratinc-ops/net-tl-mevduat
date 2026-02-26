@@ -452,14 +452,14 @@ export default function App() {
                 onPress={() => (marketOpen ? closeAll() : openMarket())}
                 style={[styles.menuBtn, { backgroundColor: t.menuBg, borderColor: t.border }]}
               >
-                <Text style={[styles.menuText, { color: t.text }]}>{marketOpen ? "Piyasa (Kapat)" : "Piyasa"}</Text>
+                <Text style={[styles.menuText, { color: t.text }]}>Piyasa</Text><
               </Pressable>
 
               <Pressable
                 onPress={() => (tcmbOpen ? closeAll() : openTcmb())}
                 style={[styles.menuBtn, { backgroundColor: t.menuBg, borderColor: t.border }]}
               >
-                <Text style={[styles.menuText, { color: t.text }]}>{tcmbOpen ? "Faiz Kararı (Kapat)" : "Faiz Kararı"}</Text>
+                <Text style={[styles.menuText, { color: t.text }]}>Faiz Kararı</Text>
               </Pressable>
             </View>
 
