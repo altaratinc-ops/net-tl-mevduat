@@ -135,6 +135,11 @@ function getMarketBucket(days: number): 32 | 92 | 180 | null {
   return null;
 }
 
+function getMarketRangeByBucket(bucket: 32 | 92 | 180 | null) {
+  if (!bucket) return null;
+  return MARKET_RANGES.find((x) => x.days === bucket) ?? null;
+}
+
 async function copyToClipboard(text: string) {
   const nav: any = typeof navigator !== "undefined" ? navigator : null;
 
@@ -168,6 +173,18 @@ export default function App() {
   const [customDaysText, setCustomDaysText] = useState(() => String(DEFAULT_DAYS));
   const [copied, setCopied] = useState(false);
 
+  // Piyasa paneli (YouTube açıklama gibi)
+  const [marketOpen, setMarketOpen] = useState(false);
+  const marketAnim = useRef(new Animated.Value(0)).current; // 0 kapalı, 1 açık
+
+  useEffect(() => {
+    Animated.timing(marketAnim, {
+      toValue: marketOpen ? 1 : 0,
+      duration: marketOpen ? 220 : 180,
+      useNativeDriver: false,
+    }).start();
+  }, [marketOpen, marketAnim]);
+
   // SEO
   useEffect(() => {
     if (typeof document === "undefined") return;
@@ -200,11 +217,9 @@ export default function App() {
     return calcNetDeposit({ principal: principalNumber, annualRatePct: rateNumber, days: effectiveDays });
   }, [principalNumber, rateNumber, effectiveDays]);
 
-  const marketBucket = useMemo(() => getMarketBucket(effectiveDays), [effectiveDays]);
-
   const canCalculate = principalNumber > 0 && rateNumber > 0;
 
-  // Net card pulse (her değişimde)
+  // Net card pulse
   const pulse = useRef(new Animated.Value(1)).current;
   const pulseKey = useMemo(() => `${principalText}|${rateText}|${effectiveDays}|${theme}`, [
     principalText,
@@ -220,7 +235,7 @@ export default function App() {
     ]).start();
   }, [pulseKey, pulse]);
 
-  // CTA: scroll değil, net kartı "highlight" etsin
+  // CTA flash
   const ctaFlash = useRef(new Animated.Value(0)).current;
   const flashNetCard = () => {
     Animated.sequence([
@@ -228,6 +243,7 @@ export default function App() {
       Animated.timing(ctaFlash, { toValue: 0, duration: 260, useNativeDriver: true }),
     ]).start();
   };
+  const flashOpacity = ctaFlash.interpolate({ inputRange: [0, 1], outputRange: [0, 1] });
 
   async function onCopy() {
     if (!canCalculate) return;
@@ -244,9 +260,9 @@ export default function App() {
     setTimeout(() => setCopied(false), 900);
   }
 
-  // Scroll nav sadece alt kartlara gitsin (detay/piyasa/bilgi)
+  // Scroll nav (Detay + Bilgi + SEO)
   const scrollRef = useRef<ScrollView>(null);
-  const sectionY = useRef<{ detail?: number; market?: number; info?: number; seo?: number }>({});
+  const sectionY = useRef<{ detail?: number; info?: number; seo?: number }>({});
 
   const onSectionLayout =
     (key: keyof typeof sectionY.current) =>
@@ -260,7 +276,22 @@ export default function App() {
     scrollRef.current?.scrollTo({ y: Math.max(0, y - 10), animated: true });
   };
 
-  const flashOpacity = ctaFlash.interpolate({ inputRange: [0, 1], outputRange: [0, 1] });
+  // Mini piyasa bilgilendirmesi (net tutarın altında)
+  const marketBucket = useMemo(() => getMarketBucket(effectiveDays), [effectiveDays]);
+  const range = useMemo(() => getMarketRangeByBucket(marketBucket), [marketBucket]);
+
+  const miniMarketText = useMemo(() => {
+    if (marketBucket === null) {
+      return "Piyasa: 180+ gün için sabit aralık yok (banka/kampanya değişken).";
+    }
+    if (!range) return "Piyasa: bilgi bulunamadı.";
+    return `Piyasa (${marketBucket} gün): %${range.min} – %${range.max} (bilgilendirme)`;
+  }, [marketBucket, range]);
+
+  // Market panel height anim
+  const panelMaxHeight = 230; // küçük sheet gibi
+  const panelHeight = marketAnim.interpolate({ inputRange: [0, 1], outputRange: [0, panelMaxHeight] });
+  const panelOpacity = marketAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 1] });
 
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: t.bg }]}>
@@ -271,7 +302,7 @@ export default function App() {
           contentContainerStyle={[styles.container, { backgroundColor: t.bg }]}
           keyboardShouldPersistTaps="handled"
         >
-          {/* ===== HERO (her şey ilk ekranda) ===== */}
+          {/* ===== HERO ===== */}
           <View style={[styles.hero, { borderColor: t.border }]}>
             <View
               style={[
@@ -301,7 +332,7 @@ export default function App() {
               </Pressable>
             </View>
 
-            {/* Mini menu (alt bölümlere gider) */}
+            {/* Mini menu */}
             <View style={[styles.menuRow, { borderColor: t.border }]}>
               <Pressable
                 onPress={() => scrollToKey("detail")}
@@ -309,12 +340,14 @@ export default function App() {
               >
                 <Text style={[styles.menuText, { color: t.text }]}>Detay</Text>
               </Pressable>
+
               <Pressable
-                onPress={() => scrollToKey("market")}
+                onPress={() => setMarketOpen((v) => !v)}
                 style={[styles.menuBtn, { backgroundColor: t.menuBg, borderColor: t.border }]}
               >
-                <Text style={[styles.menuText, { color: t.text }]}>Piyasa</Text>
+                <Text style={[styles.menuText, { color: t.text }]}>{marketOpen ? "Piyasa (Kapat)" : "Piyasa"}</Text>
               </Pressable>
+
               <Pressable
                 onPress={() => scrollToKey("info")}
                 style={[styles.menuBtn, { backgroundColor: t.menuBg, borderColor: t.border }]}
@@ -330,7 +363,6 @@ export default function App() {
                 { backgroundColor: t.netBg, borderColor: t.netBorder, transform: [{ scale: pulse }] },
               ]}
             >
-              {/* CTA flash overlay */}
               <Animated.View
                 pointerEvents="none"
                 style={[
@@ -363,10 +395,84 @@ export default function App() {
                 </View>
               </View>
 
-              <Text style={[styles.micro, { color: t.muted }]}>Bilgilendirme amaçlıdır. Sonuçlar girdiğiniz faiz oranına göre hesaplanır.</Text>
+              {/* Mini piyasa bilgilendirme (az yer kaplar) */}
+              <View style={[styles.miniInfoRow, { borderColor: t.netBorder }]}>
+                <Text style={[styles.miniInfoText, { color: t.muted }]} numberOfLines={2}>
+                  {miniMarketText}
+                </Text>
+                <Pressable onPress={() => setMarketOpen(true)} style={[styles.miniInfoBtn, { borderColor: t.netBorder }]}>
+                  <Text style={{ color: t.accent, fontWeight: "900", fontSize: 12 }}>Aç</Text>
+                </Pressable>
+              </View>
+
+              <Text style={[styles.micro, { color: t.muted }]}>
+                Bilgilendirme amaçlıdır. Sonuçlar girdiğiniz faiz oranına göre hesaplanır.
+              </Text>
             </Animated.View>
 
-            {/* Hero Inputs (kullanıcı dostu) */}
+            {/* Piyasa Panel (YouTube info sheet gibi) */}
+            <Animated.View
+              style={[
+                styles.marketPanel,
+                {
+                  height: panelHeight,
+                  opacity: panelOpacity,
+                  borderColor: t.border,
+                  backgroundColor: t.card,
+                },
+              ]}
+            >
+              <View style={{ padding: 12 }}>
+                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+                  <Text style={{ color: t.text, fontWeight: "900" }}>Piyasa Aralığı</Text>
+                  <Text style={[styles.micro, { color: t.muted }]}>Güncelleme: {MARKET_RANGES_LAST_UPDATED}</Text>
+                </View>
+
+                <View style={{ marginTop: 10, gap: 8 }}>
+                  {MARKET_RANGES.map((r) => {
+                    const active = marketBucket === r.days;
+                    return (
+                      <View
+                        key={r.days}
+                        style={[
+                          styles.rangeLine,
+                          {
+                            backgroundColor: active ? t.rangeActiveBg : t.rangeBg,
+                            borderColor: active ? t.accentBorder : t.border,
+                          },
+                        ]}
+                      >
+                        <Text style={{ color: active ? t.text : t.muted, fontWeight: "900" }}>
+                          {r.days} gün: %{r.min} – %{r.max}
+                        </Text>
+                        {active ? (
+                          <Text style={{ color: t.accent, fontWeight: "900", fontSize: 11 }}>Seçili</Text>
+                        ) : null}
+                      </View>
+                    );
+                  })}
+                </View>
+
+                {marketBucket === null ? (
+                  <Text style={[styles.micro, { color: t.muted, marginTop: 10 }]}>
+                    180 gün üzeri vadelerde oranlar banka/kampanya/koşullara göre daha değişken olabilir. Bu panel bilgilendirme amaçlıdır.
+                  </Text>
+                ) : (
+                  <Text style={[styles.micro, { color: t.muted, marginTop: 10 }]}>
+                    Not: Bu aralık bilgilendirme amaçlıdır. Sonuçlar sizin girdiğiniz faiz oranı üzerinden hesaplanır.
+                  </Text>
+                )}
+
+                <Pressable
+                  onPress={() => setMarketOpen(false)}
+                  style={[styles.panelClose, { borderColor: t.border, backgroundColor: t.bgSoft }]}
+                >
+                  <Text style={{ color: t.text, fontWeight: "900" }}>Kapat</Text>
+                </Pressable>
+              </View>
+            </Animated.View>
+
+            {/* Hero Inputs */}
             <View style={[styles.heroInputs, { backgroundColor: t.card, borderColor: t.border }]}>
               <View style={{ gap: 10 }}>
                 <View>
@@ -449,7 +555,7 @@ export default function App() {
                 </View>
               </View>
 
-              {/* CTA button = hesapla hissi + highlight */}
+              {/* CTA = hesaplandı hissi */}
               <View style={{ marginTop: 12, flexDirection: "row", gap: 10 }}>
                 <Pressable
                   onPress={flashNetCard}
@@ -459,7 +565,7 @@ export default function App() {
                 </Pressable>
 
                 <Pressable
-                  onPress={() => scrollToKey("market")}
+                  onPress={() => setMarketOpen(true)}
                   style={[styles.ctaSecondary, { borderColor: t.border, backgroundColor: t.bgSoft }]}
                 >
                   <Text style={[styles.ctaSecondaryText, { color: t.text }]}>Piyasa</Text>
@@ -480,53 +586,7 @@ export default function App() {
             <Text style={[styles.line, { color: t.muted }]}>Efektif yıllık (EAY): {result.eay.toFixed(1)}%</Text>
           </View>
 
-          {/* ====== PİYASA ====== */}
-          <View onLayout={onSectionLayout("market")} />
-          <View style={[styles.card, { backgroundColor: t.card, borderColor: t.border }]}>
-            <View style={{ flexDirection: "row", justifyContent: "space-between", gap: 10 }}>
-              <Text style={[styles.cardTitle, { color: t.text }]}>Piyasa Aralığı</Text>
-              <Text style={[styles.micro, { color: t.muted }]}>Güncelleme: {MARKET_RANGES_LAST_UPDATED}</Text>
-            </View>
-
-            <Text style={[styles.micro, { color: t.muted, marginTop: 8 }]}>
-              Seçili vade: <Text style={{ color: t.text, fontWeight: "900" }}>{effectiveDays} gün</Text>
-            </Text>
-
-            <View style={{ marginTop: 12, gap: 8 }}>
-              {MARKET_RANGES.map((r) => {
-                const active = marketBucket === r.days;
-                return (
-                  <View
-                    key={r.days}
-                    style={[
-                      styles.rangeLine,
-                      {
-                        backgroundColor: active ? t.rangeActiveBg : t.rangeBg,
-                        borderColor: active ? t.accentBorder : t.border,
-                      },
-                    ]}
-                  >
-                    <Text style={{ color: active ? t.text : t.muted, fontWeight: "900" }}>
-                      {r.days} gün: %{r.min} – %{r.max}
-                    </Text>
-                    {active ? <Text style={{ color: t.accent, fontWeight: "900", fontSize: 11 }}>Uygulanan bant</Text> : null}
-                  </View>
-                );
-              })}
-            </View>
-
-            {marketBucket === null ? (
-              <Text style={[styles.micro, { color: t.muted, marginTop: 12 }]}>
-                180 gün üzeri vadelerde oranlar banka/kampanya/koşullara göre çok daha değişken olabilir. Bu bölüm sabit aralık yerine bilgilendirme amaçlıdır.
-              </Text>
-            ) : (
-              <Text style={[styles.micro, { color: t.muted, marginTop: 12 }]}>
-                Not: Bu aralık bilgilendirme amaçlıdır. Sonuçlar, sizin girdiğiniz faiz oranı üzerinden hesaplanır.
-              </Text>
-            )}
-          </View>
-
-          {/* ====== BİLGİ ====== */}
+          {/* ====== BİLGİ (detayın altına taşındı) ====== */}
           <View onLayout={onSectionLayout("info")} />
           <View style={[styles.infoCard, { backgroundColor: t.infoBg, borderColor: t.infoBorder }]}>
             <Text style={{ color: t.text, fontWeight: "900", fontSize: 13 }}>TCMB Bilgisi</Text>
@@ -561,7 +621,7 @@ export default function App() {
             <Text style={[styles.seoH3, { color: t.text }]}>Mevduat Net Getiri Hesaplama</Text>
             <Text style={[styles.seoP, { color: t.muted }]}>
               Anapara, faiz oranı ve vade gününü girerek brüt getiri, stopaj kesintisi ve net kazancı tek ekranda görebilirsiniz.
-              32/92/180 gün için piyasa aralığı bölümü ise sadece bilgilendirme amaçlı referans sağlar.
+              Piyasa aralığı bölümü ise sadece bilgilendirme amaçlı referans sağlar.
             </Text>
           </View>
 
@@ -609,6 +669,34 @@ const styles = StyleSheet.create({
 
   metaRow: { flexDirection: "row", gap: 8, marginTop: 12, flexWrap: "wrap", justifyContent: "center" },
   metaPill: { borderWidth: 1, borderRadius: 999, paddingHorizontal: 10, paddingVertical: 7 },
+
+  miniInfoRow: {
+    marginTop: 10,
+    width: "100%",
+    borderTopWidth: 1,
+    paddingTop: 10,
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 10,
+    justifyContent: "space-between",
+  },
+  miniInfoText: { flex: 1, fontSize: 11, fontWeight: "800", lineHeight: 16 },
+  miniInfoBtn: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 7 },
+
+  marketPanel: {
+    marginTop: 12,
+    borderRadius: 18,
+    borderWidth: 1,
+    overflow: "hidden",
+  },
+  panelClose: {
+    marginTop: 10,
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingVertical: 10,
+    alignItems: "center",
+    justifyContent: "center",
+  },
 
   heroInputs: { marginTop: 14, borderRadius: 20, borderWidth: 1, padding: 14 },
 
