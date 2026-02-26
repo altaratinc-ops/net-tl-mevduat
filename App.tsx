@@ -11,7 +11,7 @@ import {
   ScrollView,
   StatusBar,
   Animated,
-  LayoutChangeEvent,
+  Modal,
 } from "react-native";
 
 const MARKET_RANGES_LAST_UPDATED = "26 Şubat 2026";
@@ -162,6 +162,83 @@ async function copyToClipboard(text: string) {
   }
 }
 
+function SlidePanelModal(props: {
+  visible: boolean;
+  onClose: () => void;
+  title: string;
+  subtitle?: string;
+  children: React.ReactNode;
+  theme: {
+    bg: string;
+    bgSoft: string;
+    card: string;
+    text: string;
+    muted: string;
+    border: string;
+  };
+}) {
+  const { visible, onClose, title, subtitle, children, theme } = props;
+
+  const anim = useRef(new Animated.Value(0)).current;
+
+  useEffect(() => {
+    if (!visible) return;
+    anim.setValue(0);
+    Animated.spring(anim, {
+      toValue: 1,
+      useNativeDriver: true,
+      damping: 18,
+      stiffness: 220,
+      mass: 0.7,
+    }).start();
+  }, [visible, anim]);
+
+  const translateY = anim.interpolate({ inputRange: [0, 1], outputRange: [-18, 0] });
+  const opacity = anim.interpolate({ inputRange: [0, 1], outputRange: [0, 1] });
+
+  return (
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
+      {/* Backdrop: herhangi bir yere tıklayınca kapanır */}
+      <Pressable style={styles.modalBackdrop} onPress={onClose}>
+        {/* Panel: buraya basınca kapanmasın */}
+        <Pressable onPress={() => {}} style={{ width: "100%" }}>
+          <Animated.View
+            style={[
+              styles.modalPanel,
+              {
+                backgroundColor: theme.card,
+                borderColor: theme.border,
+                transform: [{ translateY }],
+                opacity,
+              },
+            ]}
+          >
+            <View style={styles.modalHeader}>
+              <View style={{ flex: 1 }}>
+                <Text style={{ color: theme.text, fontWeight: "900", fontSize: 14 }}>{title}</Text>
+                {subtitle ? (
+                  <Text style={{ color: theme.muted, fontWeight: "800", fontSize: 11, marginTop: 4 }}>
+                    {subtitle}
+                  </Text>
+                ) : null}
+              </View>
+
+              <Pressable
+                onPress={onClose}
+                style={[styles.modalCloseBtn, { borderColor: theme.border, backgroundColor: theme.bgSoft }]}
+              >
+                <Text style={{ color: theme.text, fontWeight: "900" }}>✕</Text>
+              </Pressable>
+            </View>
+
+            <View style={{ marginTop: 10 }}>{children}</View>
+          </Animated.View>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
 export default function App() {
   const [theme, setTheme] = useState<"dark" | "light">("dark");
   const isDark = theme === "dark";
@@ -173,17 +250,22 @@ export default function App() {
   const [customDaysText, setCustomDaysText] = useState(() => String(DEFAULT_DAYS));
   const [copied, setCopied] = useState(false);
 
-  // Piyasa paneli (YouTube açıklama gibi)
+  // Modals (YouTube-like)
   const [marketOpen, setMarketOpen] = useState(false);
-  const marketAnim = useRef(new Animated.Value(0)).current; // 0 kapalı, 1 açık
+  const [tcmbOpen, setTcmbOpen] = useState(false);
 
-  useEffect(() => {
-    Animated.timing(marketAnim, {
-      toValue: marketOpen ? 1 : 0,
-      duration: marketOpen ? 220 : 180,
-      useNativeDriver: false,
-    }).start();
-  }, [marketOpen, marketAnim]);
+  const openMarket = () => {
+    setTcmbOpen(false);
+    setMarketOpen(true);
+  };
+  const openTcmb = () => {
+    setMarketOpen(false);
+    setTcmbOpen(true);
+  };
+  const closeAll = () => {
+    setMarketOpen(false);
+    setTcmbOpen(false);
+  };
 
   // SEO
   useEffect(() => {
@@ -260,62 +342,93 @@ export default function App() {
     setTimeout(() => setCopied(false), 900);
   }
 
-  // Scroll nav (Detay + Bilgi + SEO)
-  const scrollRef = useRef<ScrollView>(null);
-  const sectionY = useRef<{ detail?: number; info?: number; seo?: number }>({});
-
-  const onSectionLayout =
-    (key: keyof typeof sectionY.current) =>
-    (e: LayoutChangeEvent) => {
-      sectionY.current[key] = e.nativeEvent.layout.y;
-    };
-
-  const scrollToKey = (key: keyof typeof sectionY.current) => {
-    const y = sectionY.current[key];
-    if (typeof y !== "number") return;
-    scrollRef.current?.scrollTo({ y: Math.max(0, y - 10), animated: true });
-  };
-
-  // Mini piyasa bilgilendirmesi (net tutarın altında)
+  // Mini piyasa bilgilendirme (net tutarın altında)
   const marketBucket = useMemo(() => getMarketBucket(effectiveDays), [effectiveDays]);
   const range = useMemo(() => getMarketRangeByBucket(marketBucket), [marketBucket]);
 
   const miniMarketText = useMemo(() => {
-    if (marketBucket === null) {
-      return "Piyasa: 180+ gün için sabit aralık yok (banka/kampanya değişken).";
-    }
+    if (marketBucket === null) return "Piyasa: 180+ gün için sabit aralık yok (banka/kampanya değişken).";
     if (!range) return "Piyasa: bilgi bulunamadı.";
     return `Piyasa (${marketBucket} gün): %${range.min} – %${range.max} (bilgilendirme)`;
   }, [marketBucket, range]);
 
-  // Market panel height anim
-  const panelMaxHeight = 230; // küçük sheet gibi
-  const panelHeight = marketAnim.interpolate({ inputRange: [0, 1], outputRange: [0, panelMaxHeight] });
-  const panelOpacity = marketAnim.interpolate({ inputRange: [0, 1], outputRange: [0, 1] });
-
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: t.bg }]}>
       <View style={{ height: Platform.OS === "android" ? StatusBar.currentHeight ?? 0 : 0 }} />
+
+      {/* Piyasa Modal */}
+      <SlidePanelModal
+        visible={marketOpen}
+        onClose={closeAll}
+        title="Piyasa Aralığı"
+        subtitle={`Güncelleme: ${MARKET_RANGES_LAST_UPDATED}`}
+        theme={t}
+      >
+        <View style={{ gap: 8 }}>
+          {MARKET_RANGES.map((r) => {
+            const active = marketBucket === r.days;
+            return (
+              <View
+                key={r.days}
+                style={[
+                  styles.rangeLine,
+                  {
+                    backgroundColor: active ? t.rangeActiveBg : t.rangeBg,
+                    borderColor: active ? t.accentBorder : t.border,
+                  },
+                ]}
+              >
+                <Text style={{ color: active ? t.text : t.muted, fontWeight: "900" }}>
+                  {r.days} gün: %{r.min} – %{r.max}
+                </Text>
+                {active ? <Text style={{ color: t.accent, fontWeight: "900", fontSize: 11 }}>Seçili</Text> : null}
+              </View>
+            );
+          })}
+        </View>
+
+        <Text style={[styles.micro, { color: t.muted, marginTop: 10 }]}>
+          {marketBucket === null
+            ? "180 gün üzeri vadelerde oranlar banka/kampanya/koşullara göre daha değişken olabilir. Bu panel bilgilendirme amaçlıdır."
+            : "Not: Bu aralık bilgilendirme amaçlıdır. Sonuçlar sizin girdiğiniz faiz oranı üzerinden hesaplanır."}
+        </Text>
+      </SlidePanelModal>
+
+      {/* TCMB Modal */}
+      <SlidePanelModal
+        visible={tcmbOpen}
+        onClose={closeAll}
+        title="Faiz Kararı"
+        subtitle="TCMB politika faizi ve toplantı tarihleri"
+        theme={t}
+      >
+        <View style={[styles.tcmbBox, { borderColor: t.border, backgroundColor: t.bgSoft }]}>
+          <Text style={[styles.micro, { color: t.muted }]}>
+            Politika faizi: <Text style={{ color: t.text, fontWeight: "900" }}>%{TCMB_POLICY_RATE_PCT}</Text>
+          </Text>
+          <Text style={[styles.micro, { color: t.muted, marginTop: 6 }]}>
+            PPK karar tarihi: <Text style={{ color: t.text, fontWeight: "900" }}>{TCMB_POLICY_RATE_DECISION_DATE}</Text>
+          </Text>
+          <Text style={[styles.micro, { color: t.muted, marginTop: 6 }]}>
+            Sonraki PPK: <Text style={{ color: t.text, fontWeight: "900" }}>{TCMB_NEXT_MPC_MEETING_DATE}</Text>
+          </Text>
+        </View>
+
+        <Text style={[styles.micro, { color: t.muted, marginTop: 10 }]}>
+          Bu araç yatırım danışmanlığı değildir. Hesaplamalar bilgilendirme amaçlıdır; oranlar/stopaj/koşullar değişebilir.
+          Nihai tutar ve koşullar için resmi kaynakları esas alın.
+        </Text>
+      </SlidePanelModal>
+
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView
-          ref={scrollRef}
           contentContainerStyle={[styles.container, { backgroundColor: t.bg }]}
           keyboardShouldPersistTaps="handled"
         >
           {/* ===== HERO ===== */}
           <View style={[styles.hero, { borderColor: t.border }]}>
-            <View
-              style={[
-                styles.heroGlow,
-                { backgroundColor: isDark ? "rgba(64,247,178,0.10)" : "rgba(11,143,90,0.10)" },
-              ]}
-            />
-            <View
-              style={[
-                styles.heroGlow2,
-                { backgroundColor: isDark ? "rgba(64,247,178,0.06)" : "rgba(11,143,90,0.06)" },
-              ]}
-            />
+            <View style={[styles.heroGlow, { backgroundColor: isDark ? "rgba(64,247,178,0.10)" : "rgba(11,143,90,0.10)" }]} />
+            <View style={[styles.heroGlow2, { backgroundColor: isDark ? "rgba(64,247,178,0.06)" : "rgba(11,143,90,0.06)" }]} />
 
             {/* Top bar */}
             <View style={styles.topBar}>
@@ -335,24 +448,24 @@ export default function App() {
             {/* Mini menu */}
             <View style={[styles.menuRow, { borderColor: t.border }]}>
               <Pressable
-                onPress={() => scrollToKey("detail")}
+                onPress={() => flashNetCard()}
                 style={[styles.menuBtn, { backgroundColor: t.menuBg, borderColor: t.border }]}
               >
                 <Text style={[styles.menuText, { color: t.text }]}>Detay</Text>
               </Pressable>
 
               <Pressable
-                onPress={() => setMarketOpen((v) => !v)}
+                onPress={() => (marketOpen ? closeAll() : openMarket())}
                 style={[styles.menuBtn, { backgroundColor: t.menuBg, borderColor: t.border }]}
               >
                 <Text style={[styles.menuText, { color: t.text }]}>{marketOpen ? "Piyasa (Kapat)" : "Piyasa"}</Text>
               </Pressable>
 
               <Pressable
-                onPress={() => scrollToKey("info")}
+                onPress={() => (tcmbOpen ? closeAll() : openTcmb())}
                 style={[styles.menuBtn, { backgroundColor: t.menuBg, borderColor: t.border }]}
               >
-                <Text style={[styles.menuText, { color: t.text }]}>Bilgi</Text>
+                <Text style={[styles.menuText, { color: t.text }]}>{tcmbOpen ? "Faiz Kararı (Kapat)" : "Faiz Kararı"}</Text>
               </Pressable>
             </View>
 
@@ -395,12 +508,12 @@ export default function App() {
                 </View>
               </View>
 
-              {/* Mini piyasa bilgilendirme (az yer kaplar) */}
+              {/* Mini piyasa bilgilendirme */}
               <View style={[styles.miniInfoRow, { borderColor: t.netBorder }]}>
                 <Text style={[styles.miniInfoText, { color: t.muted }]} numberOfLines={2}>
                   {miniMarketText}
                 </Text>
-                <Pressable onPress={() => setMarketOpen(true)} style={[styles.miniInfoBtn, { borderColor: t.netBorder }]}>
+                <Pressable onPress={openMarket} style={[styles.miniInfoBtn, { borderColor: t.netBorder }]}>
                   <Text style={{ color: t.accent, fontWeight: "900", fontSize: 12 }}>Aç</Text>
                 </Pressable>
               </View>
@@ -410,67 +523,32 @@ export default function App() {
               </Text>
             </Animated.View>
 
-            {/* Piyasa Panel (YouTube info sheet gibi) */}
-            <Animated.View
-              style={[
-                styles.marketPanel,
-                {
-                  height: panelHeight,
-                  opacity: panelOpacity,
-                  borderColor: t.border,
-                  backgroundColor: t.card,
-                },
-              ]}
-            >
-              <View style={{ padding: 12 }}>
-                <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
-                  <Text style={{ color: t.text, fontWeight: "900" }}>Piyasa Aralığı</Text>
-                  <Text style={[styles.micro, { color: t.muted }]}>Güncelleme: {MARKET_RANGES_LAST_UPDATED}</Text>
+            {/* Küçük Detay (Net TL ile Hesaplama arasına) */}
+            <View style={[styles.compactDetail, { backgroundColor: t.card, borderColor: t.border }]}>
+              <View style={styles.compactRow}>
+                <View style={styles.compactItem}>
+                  <Text style={[styles.compactLabel, { color: t.muted }]}>Brüt</Text>
+                  <Text style={[styles.compactValue, { color: t.text }]}>{formatTLInt(result.gross)} TL</Text>
                 </View>
 
-                <View style={{ marginTop: 10, gap: 8 }}>
-                  {MARKET_RANGES.map((r) => {
-                    const active = marketBucket === r.days;
-                    return (
-                      <View
-                        key={r.days}
-                        style={[
-                          styles.rangeLine,
-                          {
-                            backgroundColor: active ? t.rangeActiveBg : t.rangeBg,
-                            borderColor: active ? t.accentBorder : t.border,
-                          },
-                        ]}
-                      >
-                        <Text style={{ color: active ? t.text : t.muted, fontWeight: "900" }}>
-                          {r.days} gün: %{r.min} – %{r.max}
-                        </Text>
-                        {active ? (
-                          <Text style={{ color: t.accent, fontWeight: "900", fontSize: 11 }}>Seçili</Text>
-                        ) : null}
-                      </View>
-                    );
-                  })}
+                <View style={[styles.compactDivider, { backgroundColor: t.border }]} />
+
+                <View style={styles.compactItem}>
+                  <Text style={[styles.compactLabel, { color: t.muted }]}>Stopaj</Text>
+                  <Text style={[styles.compactValue, { color: t.text }]}>{formatTLInt(result.withholding)} TL</Text>
                 </View>
 
-                {marketBucket === null ? (
-                  <Text style={[styles.micro, { color: t.muted, marginTop: 10 }]}>
-                    180 gün üzeri vadelerde oranlar banka/kampanya/koşullara göre daha değişken olabilir. Bu panel bilgilendirme amaçlıdır.
-                  </Text>
-                ) : (
-                  <Text style={[styles.micro, { color: t.muted, marginTop: 10 }]}>
-                    Not: Bu aralık bilgilendirme amaçlıdır. Sonuçlar sizin girdiğiniz faiz oranı üzerinden hesaplanır.
-                  </Text>
-                )}
+                <View style={[styles.compactDivider, { backgroundColor: t.border }]} />
 
-                <Pressable
-                  onPress={() => setMarketOpen(false)}
-                  style={[styles.panelClose, { borderColor: t.border, backgroundColor: t.bgSoft }]}
-                >
-                  <Text style={{ color: t.text, fontWeight: "900" }}>Kapat</Text>
-                </Pressable>
+                <View style={styles.compactItem}>
+                  <Text style={[styles.compactLabel, { color: t.muted }]}>EAY</Text>
+                  <Text style={[styles.compactValue, { color: t.text }]}>{result.eay.toFixed(1)}%</Text>
+                </View>
               </View>
-            </Animated.View>
+              <Text style={[styles.micro, { color: t.muted, marginTop: 8 }]}>
+                Vade: {effectiveDays} gün — Uygulanan stopaj: %{result.stopajPctUsed}
+              </Text>
+            </View>
 
             {/* Hero Inputs */}
             <View style={[styles.heroInputs, { backgroundColor: t.card, borderColor: t.border }]}>
@@ -555,17 +633,20 @@ export default function App() {
                 </View>
               </View>
 
-              {/* CTA = hesaplandı hissi */}
+              {/* CTA */}
               <View style={{ marginTop: 12, flexDirection: "row", gap: 10 }}>
                 <Pressable
-                  onPress={flashNetCard}
+                  onPress={() => {
+                    closeAll();
+                    flashNetCard();
+                  }}
                   style={[styles.ctaPrimary, { backgroundColor: t.accent, borderColor: t.accentBorder }]}
                 >
                   <Text style={[styles.ctaPrimaryText, { color: isDark ? "#062217" : "#FFFFFF" }]}>Hemen Hesapla</Text>
                 </Pressable>
 
                 <Pressable
-                  onPress={() => setMarketOpen(true)}
+                  onPress={openMarket}
                   style={[styles.ctaSecondary, { borderColor: t.border, backgroundColor: t.bgSoft }]}
                 >
                   <Text style={[styles.ctaSecondaryText, { color: t.text }]}>Piyasa</Text>
@@ -574,37 +655,7 @@ export default function App() {
             </View>
           </View>
 
-          {/* ====== DETAY ====== */}
-          <View onLayout={onSectionLayout("detail")} />
-          <View style={[styles.card, { backgroundColor: t.card, borderColor: t.border }]}>
-            <Text style={[styles.cardTitle, { color: t.text }]}>Detay</Text>
-            <Text style={[styles.line, { color: t.muted }]}>Brüt getiri: {formatTLInt(result.gross)} TL</Text>
-            <Text style={[styles.line, { color: t.muted }]}>Stopaj kesintisi: {formatTLInt(result.withholding)} TL</Text>
-            <Text style={[styles.lineStrong, { color: t.text }]}>
-              Vade: {effectiveDays} gün — Uygulanan stopaj: %{result.stopajPctUsed}
-            </Text>
-            <Text style={[styles.line, { color: t.muted }]}>Efektif yıllık (EAY): {result.eay.toFixed(1)}%</Text>
-          </View>
-
-          {/* ====== BİLGİ (detayın altına taşındı) ====== */}
-          <View onLayout={onSectionLayout("info")} />
-          <View style={[styles.infoCard, { backgroundColor: t.infoBg, borderColor: t.infoBorder }]}>
-            <Text style={{ color: t.text, fontWeight: "900", fontSize: 13 }}>TCMB Bilgisi</Text>
-            <Text style={[styles.micro, { color: t.muted, marginTop: 6 }]}>
-              Politika faizi: <Text style={{ color: t.text, fontWeight: "900" }}>%{TCMB_POLICY_RATE_PCT}</Text> (PPK karar:{" "}
-              {TCMB_POLICY_RATE_DECISION_DATE})
-            </Text>
-            <Text style={[styles.micro, { color: t.muted, marginTop: 4 }]}>
-              Sonraki PPK toplantısı: <Text style={{ color: t.text, fontWeight: "900" }}>{TCMB_NEXT_MPC_MEETING_DATE}</Text>
-            </Text>
-
-            <Text style={[styles.micro, { color: t.muted, marginTop: 10 }]}>
-              Bu araç yatırım danışmanlığı değildir. Hesaplamalar bilgilendirme amaçlıdır; oranlar/stopaj/koşullar değişebilir. Nihai tutar ve koşullar için resmi kaynakları esas alın.
-            </Text>
-          </View>
-
-          {/* ====== SEO ====== */}
-          <View onLayout={onSectionLayout("seo")} />
+          {/* ===== SEO (aynı) ===== */}
           <View style={[styles.seoBlock, { backgroundColor: t.card, borderColor: t.border }]}>
             <Text style={[styles.seoH2, { color: t.text }]}>Vadeli Mevduat Nedir?</Text>
             <Text style={[styles.seoP, { color: t.muted }]}>
@@ -683,26 +734,17 @@ const styles = StyleSheet.create({
   miniInfoText: { flex: 1, fontSize: 11, fontWeight: "800", lineHeight: 16 },
   miniInfoBtn: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 7 },
 
-  marketPanel: {
-    marginTop: 12,
-    borderRadius: 18,
-    borderWidth: 1,
-    overflow: "hidden",
-  },
-  panelClose: {
-    marginTop: 10,
-    borderWidth: 1,
-    borderRadius: 14,
-    paddingVertical: 10,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  compactDetail: { marginTop: 12, borderRadius: 18, borderWidth: 1, padding: 12 },
+  compactRow: { flexDirection: "row", alignItems: "center" },
+  compactItem: { flex: 1, alignItems: "center" },
+  compactLabel: { fontSize: 11, fontWeight: "900" },
+  compactValue: { marginTop: 4, fontSize: 13, fontWeight: "900" },
+  compactDivider: { width: 1, height: 34, marginHorizontal: 8 },
 
-  heroInputs: { marginTop: 14, borderRadius: 20, borderWidth: 1, padding: 14 },
+  heroInputs: { marginTop: 12, borderRadius: 20, borderWidth: 1, padding: 14 },
 
   label: { fontSize: 12, fontWeight: "900", marginBottom: 6, marginTop: 6 },
   input: { borderWidth: 1, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 11, fontSize: 16, fontWeight: "800" },
-
   micro: { marginTop: 6, fontSize: 11, fontWeight: "700" },
 
   pills: { flexDirection: "row", gap: 8, flexWrap: "wrap" },
@@ -713,14 +755,7 @@ const styles = StyleSheet.create({
   ctaSecondary: { borderRadius: 16, paddingVertical: 12, paddingHorizontal: 14, alignItems: "center", justifyContent: "center", borderWidth: 1 },
   ctaSecondaryText: { fontSize: 13, fontWeight: "900" },
 
-  card: { marginTop: 14, borderRadius: 18, borderWidth: 1, padding: 14 },
-  cardTitle: { fontSize: 14, fontWeight: "900" },
-  line: { marginTop: 8, fontSize: 13, fontWeight: "800", textAlign: "center" },
-  lineStrong: { marginTop: 10, fontSize: 13, fontWeight: "900", textAlign: "center" },
-
   rangeLine: { borderWidth: 1, borderRadius: 14, paddingVertical: 11, paddingHorizontal: 12, flexDirection: "row", justifyContent: "space-between" },
-
-  infoCard: { marginTop: 14, borderRadius: 18, borderWidth: 1, padding: 14 },
 
   seoBlock: { marginTop: 14, borderRadius: 18, borderWidth: 1, padding: 14 },
   seoH2: { fontSize: 18, fontWeight: "900", marginBottom: 8 },
@@ -728,6 +763,30 @@ const styles = StyleSheet.create({
   seoP: { fontSize: 12, fontWeight: "700", lineHeight: 18 },
 
   footer: { marginTop: 16, textAlign: "center", fontSize: 11, fontWeight: "800" },
+
+  // Modal
+  modalBackdrop: {
+    flex: 1,
+    backgroundColor: "rgba(0,0,0,0.45)",
+    paddingTop: 70, // YouTube gibi üstten açılır hissi
+    paddingHorizontal: 14,
+  },
+  modalPanel: {
+    width: "100%",
+    borderRadius: 18,
+    borderWidth: 1,
+    padding: 12,
+  },
+  modalHeader: { flexDirection: "row", alignItems: "center", gap: 10 },
+  modalCloseBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: 12,
+    borderWidth: 1,
+    alignItems: "center",
+    justifyContent: "center",
+  },
+  tcmbBox: { borderWidth: 1, borderRadius: 14, padding: 12 },
 });
 
 const dark = {
@@ -752,9 +811,6 @@ const dark = {
 
   pillBg: "#0B1020",
   pillActiveBg: "rgba(234,240,255,0.05)",
-
-  infoBg: "#0D1430",
-  infoBorder: "#1B2442",
 
   menuBg: "rgba(255,255,255,0.03)",
 };
@@ -781,9 +837,6 @@ const light = {
 
   pillBg: "#FFFFFF",
   pillActiveBg: "#F1F5FF",
-
-  infoBg: "#EEF2FF",
-  infoBorder: "#D7DEFF",
 
   menuBg: "#FFFFFF",
 };
