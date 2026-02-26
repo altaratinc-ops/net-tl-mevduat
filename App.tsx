@@ -198,9 +198,7 @@ function SlidePanelModal(props: {
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
-      {/* Backdrop: herhangi bir yere tıklayınca kapanır */}
       <Pressable style={styles.modalBackdrop} onPress={onClose}>
-        {/* Panel: buraya basınca kapanmasın */}
         <Pressable onPress={() => {}} style={{ width: "100%" }}>
           <Animated.View
             style={[
@@ -250,7 +248,6 @@ export default function App() {
   const [customDaysText, setCustomDaysText] = useState(() => String(DEFAULT_DAYS));
   const [copied, setCopied] = useState(false);
 
-  // Modals (YouTube-like)
   const [marketOpen, setMarketOpen] = useState(false);
   const [tcmbOpen, setTcmbOpen] = useState(false);
 
@@ -301,7 +298,7 @@ export default function App() {
 
   const canCalculate = principalNumber > 0 && rateNumber > 0;
 
-  // Net card pulse
+  // pulse
   const pulse = useRef(new Animated.Value(1)).current;
   const pulseKey = useMemo(() => `${principalText}|${rateText}|${effectiveDays}|${theme}`, [
     principalText,
@@ -317,7 +314,7 @@ export default function App() {
     ]).start();
   }, [pulseKey, pulse]);
 
-  // CTA flash
+  // flash
   const ctaFlash = useRef(new Animated.Value(0)).current;
   const flashNetCard = () => {
     Animated.sequence([
@@ -342,7 +339,6 @@ export default function App() {
     setTimeout(() => setCopied(false), 900);
   }
 
-  // Mini piyasa bilgilendirme (net tutarın altında)
   const marketBucket = useMemo(() => getMarketBucket(effectiveDays), [effectiveDays]);
   const range = useMemo(() => getMarketRangeByBucket(marketBucket), [marketBucket]);
 
@@ -352,6 +348,12 @@ export default function App() {
     return `Piyasa (${marketBucket} gün): %${range.min} – %${range.max} (bilgilendirme)`;
   }, [marketBucket, range]);
 
+  const selectedChipText = useMemo(() => {
+    if (marketBucket === null) return `📌 Seçili vade: ${effectiveDays} gün (180+ → aralık değişken)`;
+    if (!range) return `📌 Seçili vade: ${effectiveDays} gün`;
+    return `📌 Seçili vade: ${effectiveDays} gün → Piyasa bant: %${range.min}–%${range.max}`;
+  }, [marketBucket, range, effectiveDays]);
+
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: t.bg }]}>
       <View style={{ height: Platform.OS === "android" ? StatusBar.currentHeight ?? 0 : 0 }} />
@@ -360,11 +362,15 @@ export default function App() {
       <SlidePanelModal
         visible={marketOpen}
         onClose={closeAll}
-        title="Piyasa Aralığı"
+        title="Piyasa"
         subtitle={`Güncelleme: ${MARKET_RANGES_LAST_UPDATED}`}
         theme={t}
       >
-        <View style={{ gap: 8 }}>
+        <View style={[styles.chip, { borderColor: t.border, backgroundColor: t.bgSoft }]}>
+          <Text style={{ color: t.text, fontWeight: "900", fontSize: 12 }}>{selectedChipText}</Text>
+        </View>
+
+        <View style={{ gap: 8, marginTop: 10 }}>
           {MARKET_RANGES.map((r) => {
             const active = marketBucket === r.days;
             return (
@@ -379,7 +385,7 @@ export default function App() {
                 ]}
               >
                 <Text style={{ color: active ? t.text : t.muted, fontWeight: "900" }}>
-                  {r.days} gün: %{r.min} – %{r.max}
+                  📈 {r.days} gün: %{r.min} – %{r.max}
                 </Text>
                 {active ? <Text style={{ color: t.accent, fontWeight: "900", fontSize: 11 }}>Seçili</Text> : null}
               </View>
@@ -388,9 +394,9 @@ export default function App() {
         </View>
 
         <Text style={[styles.micro, { color: t.muted, marginTop: 10 }]}>
-          {marketBucket === null
+          🛈 {marketBucket === null
             ? "180 gün üzeri vadelerde oranlar banka/kampanya/koşullara göre daha değişken olabilir. Bu panel bilgilendirme amaçlıdır."
-            : "Not: Bu aralık bilgilendirme amaçlıdır. Sonuçlar sizin girdiğiniz faiz oranı üzerinden hesaplanır."}
+            : "Bu aralık bilgilendirme amaçlıdır. Sonuçlar sizin girdiğiniz faiz oranı üzerinden hesaplanır."}
         </Text>
       </SlidePanelModal>
 
@@ -421,16 +427,11 @@ export default function App() {
       </SlidePanelModal>
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <ScrollView
-          contentContainerStyle={[styles.container, { backgroundColor: t.bg }]}
-          keyboardShouldPersistTaps="handled"
-        >
-          {/* ===== HERO ===== */}
+        <ScrollView contentContainerStyle={[styles.container, { backgroundColor: t.bg }]} keyboardShouldPersistTaps="handled">
           <View style={[styles.hero, { borderColor: t.border }]}>
             <View style={[styles.heroGlow, { backgroundColor: isDark ? "rgba(64,247,178,0.10)" : "rgba(11,143,90,0.10)" }]} />
             <View style={[styles.heroGlow2, { backgroundColor: isDark ? "rgba(64,247,178,0.06)" : "rgba(11,143,90,0.06)" }]} />
 
-            {/* Top bar */}
             <View style={styles.topBar}>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.brand, { color: t.text }]}>Net Mevduat</Text>
@@ -445,15 +446,8 @@ export default function App() {
               </Pressable>
             </View>
 
-            {/* Mini menu */}
+            {/* Üst menü: sadece Piyasa + Faiz Kararı */}
             <View style={[styles.menuRow, { borderColor: t.border }]}>
-              <Pressable
-                onPress={() => flashNetCard()}
-                style={[styles.menuBtn, { backgroundColor: t.menuBg, borderColor: t.border }]}
-              >
-                <Text style={[styles.menuText, { color: t.text }]}>Detay</Text>
-              </Pressable>
-
               <Pressable
                 onPress={() => (marketOpen ? closeAll() : openMarket())}
                 style={[styles.menuBtn, { backgroundColor: t.menuBg, borderColor: t.border }]}
@@ -469,13 +463,7 @@ export default function App() {
               </Pressable>
             </View>
 
-            {/* Net Card */}
-            <Animated.View
-              style={[
-                styles.netCard,
-                { backgroundColor: t.netBg, borderColor: t.netBorder, transform: [{ scale: pulse }] },
-              ]}
-            >
+            <Animated.View style={[styles.netCard, { backgroundColor: t.netBg, borderColor: t.netBorder, transform: [{ scale: pulse }] }]}>
               <Animated.View
                 pointerEvents="none"
                 style={[
@@ -508,7 +496,6 @@ export default function App() {
                 </View>
               </View>
 
-              {/* Mini piyasa bilgilendirme */}
               <View style={[styles.miniInfoRow, { borderColor: t.netBorder }]}>
                 <Text style={[styles.miniInfoText, { color: t.muted }]} numberOfLines={2}>
                   {miniMarketText}
@@ -523,7 +510,7 @@ export default function App() {
               </Text>
             </Animated.View>
 
-            {/* Küçük Detay (Net TL ile Hesaplama arasına) */}
+            {/* Küçük Detay (kalsın) */}
             <View style={[styles.compactDetail, { backgroundColor: t.card, borderColor: t.border }]}>
               <View style={styles.compactRow}>
                 <View style={styles.compactItem}>
@@ -550,7 +537,7 @@ export default function App() {
               </Text>
             </View>
 
-            {/* Hero Inputs */}
+            {/* Inputs */}
             <View style={[styles.heroInputs, { backgroundColor: t.card, borderColor: t.border }]}>
               <View style={{ gap: 10 }}>
                 <View>
@@ -633,7 +620,6 @@ export default function App() {
                 </View>
               </View>
 
-              {/* CTA */}
               <View style={{ marginTop: 12, flexDirection: "row", gap: 10 }}>
                 <Pressable
                   onPress={() => {
@@ -655,7 +641,7 @@ export default function App() {
             </View>
           </View>
 
-          {/* ===== SEO (aynı) ===== */}
+          {/* SEO */}
           <View style={[styles.seoBlock, { backgroundColor: t.card, borderColor: t.border }]}>
             <Text style={[styles.seoH2, { color: t.text }]}>Vadeli Mevduat Nedir?</Text>
             <Text style={[styles.seoP, { color: t.muted }]}>
@@ -757,6 +743,8 @@ const styles = StyleSheet.create({
 
   rangeLine: { borderWidth: 1, borderRadius: 14, paddingVertical: 11, paddingHorizontal: 12, flexDirection: "row", justifyContent: "space-between" },
 
+  chip: { borderWidth: 1, borderRadius: 14, paddingVertical: 10, paddingHorizontal: 12 },
+
   seoBlock: { marginTop: 14, borderRadius: 18, borderWidth: 1, padding: 14 },
   seoH2: { fontSize: 18, fontWeight: "900", marginBottom: 8 },
   seoH3: { fontSize: 14, fontWeight: "900", marginTop: 12, marginBottom: 6 },
@@ -764,28 +752,16 @@ const styles = StyleSheet.create({
 
   footer: { marginTop: 16, textAlign: "center", fontSize: 11, fontWeight: "800" },
 
-  // Modal
   modalBackdrop: {
     flex: 1,
     backgroundColor: "rgba(0,0,0,0.45)",
-    paddingTop: 70, // YouTube gibi üstten açılır hissi
+    paddingTop: 70,
     paddingHorizontal: 14,
   },
-  modalPanel: {
-    width: "100%",
-    borderRadius: 18,
-    borderWidth: 1,
-    padding: 12,
-  },
+  modalPanel: { width: "100%", borderRadius: 18, borderWidth: 1, padding: 12 },
   modalHeader: { flexDirection: "row", alignItems: "center", gap: 10 },
-  modalCloseBtn: {
-    width: 36,
-    height: 36,
-    borderRadius: 12,
-    borderWidth: 1,
-    alignItems: "center",
-    justifyContent: "center",
-  },
+  modalCloseBtn: { width: 36, height: 36, borderRadius: 12, borderWidth: 1, alignItems: "center", justifyContent: "center" },
+
   tcmbBox: { borderWidth: 1, borderRadius: 14, padding: 12 },
 });
 
