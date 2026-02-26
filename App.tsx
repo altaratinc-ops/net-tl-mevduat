@@ -12,6 +12,7 @@ import {
   StatusBar,
   Animated,
   Modal,
+  LayoutChangeEvent,
 } from "react-native";
 
 const MARKET_RANGES_LAST_UPDATED = "26 Şubat 2026";
@@ -242,6 +243,9 @@ export default function App() {
   const isDark = theme === "dark";
   const t = isDark ? dark : light;
 
+  const scrollRef = useRef<ScrollView | null>(null);
+  const netCardYRef = useRef<number>(0);
+
   const [principalText, setPrincipalText] = useState(() => formatTLInt(DEFAULT_PRINCIPAL));
   const [rateText, setRateText] = useState(() => DEFAULT_RATE.toString().replace(".", ","));
   const [selectedDays, setSelectedDays] = useState<32 | 92 | 180 | "custom">(DEFAULT_DAYS);
@@ -354,6 +358,17 @@ export default function App() {
     return `📌 Seçili vade: ${effectiveDays} gün → Piyasa bant: %${range.min}–%${range.max}`;
   }, [marketBucket, range, effectiveDays]);
 
+  const onNetCardLayout = (e: LayoutChangeEvent) => {
+    netCardYRef.current = e.nativeEvent.layout.y;
+  };
+
+  const scrollToNetCard = () => {
+    const y = Math.max(0, (netCardYRef.current ?? 0) - 16);
+    requestAnimationFrame(() => {
+      scrollRef.current?.scrollTo({ y, animated: true });
+    });
+  };
+
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: t.bg }]}>
       <View style={{ height: Platform.OS === "android" ? StatusBar.currentHeight ?? 0 : 0 }} />
@@ -429,18 +444,29 @@ export default function App() {
       </SlidePanelModal>
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
-        <ScrollView contentContainerStyle={[styles.container, { backgroundColor: t.bg }]} keyboardShouldPersistTaps="handled">
+        <ScrollView
+          ref={(r) => (scrollRef.current = r)}
+          contentContainerStyle={[styles.container, { backgroundColor: t.bg }]}
+          keyboardShouldPersistTaps="handled"
+        >
           <View style={[styles.hero, { borderColor: t.border }]}>
+            {/* glowlar: sadece arka plan (dark’ta biraz kısık) */}
             <View
+              pointerEvents="none"
               style={[
                 styles.heroGlow,
-                { backgroundColor: isDark ? "rgba(64,247,178,0.10)" : "rgba(11,143,90,0.10)" },
+                {
+                  backgroundColor: isDark ? "rgba(64,247,178,0.07)" : "rgba(11,143,90,0.10)",
+                },
               ]}
             />
             <View
+              pointerEvents="none"
               style={[
                 styles.heroGlow2,
-                { backgroundColor: isDark ? "rgba(64,247,178,0.06)" : "rgba(11,143,90,0.06)" },
+                {
+                  backgroundColor: isDark ? "rgba(64,247,178,0.04)" : "rgba(11,143,90,0.06)",
+                },
               ]}
             />
 
@@ -476,6 +502,7 @@ export default function App() {
             </View>
 
             <Animated.View
+              onLayout={onNetCardLayout}
               style={[
                 styles.netCard,
                 { backgroundColor: t.netBg, borderColor: t.netBorder, transform: [{ scale: pulse }] },
@@ -637,12 +664,13 @@ export default function App() {
                 </View>
               </View>
 
-              {/* CTA: sadece Hemen Hesapla */}
+              {/* CTA: Hemen Hesapla → Net karta götür */}
               <View style={{ marginTop: 12 }}>
                 <Pressable
                   onPress={() => {
                     closeAll();
                     flashNetCard();
+                    scrollToNetCard();
                   }}
                   style={[styles.ctaPrimary, { backgroundColor: t.accent, borderColor: t.accentBorder }]}
                 >
@@ -688,13 +716,14 @@ const styles = StyleSheet.create({
   heroGlow: { position: "absolute", width: 420, height: 420, borderRadius: 999, top: -220, left: -180 },
   heroGlow2: { position: "absolute", width: 380, height: 380, borderRadius: 999, bottom: -220, right: -180 },
 
-  topBar: { flexDirection: "row", justifyContent: "space-between", alignItems: "center", gap: 12 },
+  topBar: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 12 },
   brand: { fontSize: 26, fontWeight: "900" },
-  tagline: { marginTop: 2, fontSize: 12, fontWeight: "800" },
+  // ⬇️ overlap fix: daha net satır yüksekliği + alt boşluk
+  tagline: { marginTop: 2, fontSize: 12, fontWeight: "800", lineHeight: 16, marginBottom: 6 },
 
   themeBtn: { width: 44, height: 44, borderRadius: 14, borderWidth: 1, alignItems: "center", justifyContent: "center" },
 
-  menuRow: { marginTop: 12, flexDirection: "row", gap: 8, borderTopWidth: 1, paddingTop: 12 },
+  menuRow: { marginTop: 8, flexDirection: "row", gap: 8, borderTopWidth: 1, paddingTop: 12 },
   menuBtn: { flex: 1, borderWidth: 1, borderRadius: 14, paddingVertical: 10, alignItems: "center", justifyContent: "center" },
   menuText: { fontSize: 12, fontWeight: "900" },
 
