@@ -446,7 +446,7 @@ export default function App() {
               </Pressable>
             </View>
 
-            {/* Üst menü: sadece Piyasa + Faiz Kararı */}
+            {/* Üst menü: Piyasa + Faiz Kararı */}
             <View style={[styles.menuRow, { borderColor: t.border }]}>
               <Pressable
                 onPress={() => (marketOpen ? closeAll() : openMarket())}
@@ -510,7 +510,7 @@ export default function App() {
               </Text>
             </Animated.View>
 
-            {/* Küçük Detay (kalsın) */}
+            {/* Küçük Detay */}
             <View style={[styles.compactDetail, { backgroundColor: t.card, borderColor: t.border }]}>
               <View style={styles.compactRow}>
                 <View style={styles.compactItem}>
@@ -620,7 +620,8 @@ export default function App() {
                 </View>
               </View>
 
-              <View style={{ marginTop: 12, flexDirection: "row", gap: 10 }}>
+              {/* CTA: sadece Hemen Hesapla */}
+              <View style={{ marginTop: 12 }}>
                 <Pressable
                   onPress={() => {
                     closeAll();
@@ -629,13 +630,6 @@ export default function App() {
                   style={[styles.ctaPrimary, { backgroundColor: t.accent, borderColor: t.accentBorder }]}
                 >
                   <Text style={[styles.ctaPrimaryText, { color: isDark ? "#062217" : "#FFFFFF" }]}>Hemen Hesapla</Text>
-                </Pressable>
-
-                <Pressable
-                  onPress={openMarket}
-                  style={[styles.ctaSecondary, { borderColor: t.border, backgroundColor: t.bgSoft }]}
-                >
-                  <Text style={[styles.ctaSecondaryText, { color: t.text }]}>Piyasa</Text>
                 </Pressable>
               </View>
             </View>
@@ -736,13 +730,10 @@ const styles = StyleSheet.create({
   pills: { flexDirection: "row", gap: 8, flexWrap: "wrap" },
   pill: { paddingHorizontal: 12, paddingVertical: 9, borderRadius: 999, borderWidth: 1 },
 
-  ctaPrimary: { flex: 1, borderRadius: 16, paddingVertical: 12, alignItems: "center", justifyContent: "center", borderWidth: 1 },
+  ctaPrimary: { borderRadius: 16, paddingVertical: 12, alignItems: "center", justifyContent: "center", borderWidth: 1 },
   ctaPrimaryText: { fontSize: 13, fontWeight: "900" },
-  ctaSecondary: { borderRadius: 16, paddingVertical: 12, paddingHorizontal: 14, alignItems: "center", justifyContent: "center", borderWidth: 1 },
-  ctaSecondaryText: { fontSize: 13, fontWeight: "900" },
 
   rangeLine: { borderWidth: 1, borderRadius: 14, paddingVertical: 11, paddingHorizontal: 12, flexDirection: "row", justifyContent: "space-between" },
-
   chip: { borderWidth: 1, borderRadius: 14, paddingVertical: 10, paddingHorizontal: 12 },
 
   seoBlock: { marginTop: 14, borderRadius: 18, borderWidth: 1, padding: 14 },
@@ -752,16 +743,10 @@ const styles = StyleSheet.create({
 
   footer: { marginTop: 16, textAlign: "center", fontSize: 11, fontWeight: "800" },
 
-  modalBackdrop: {
-    flex: 1,
-    backgroundColor: "rgba(0,0,0,0.45)",
-    paddingTop: 70,
-    paddingHorizontal: 14,
-  },
+  modalBackdrop: { flex: 1, backgroundColor: "rgba(0,0,0,0.45)", paddingTop: 70, paddingHorizontal: 14 },
   modalPanel: { width: "100%", borderRadius: 18, borderWidth: 1, padding: 12 },
   modalHeader: { flexDirection: "row", alignItems: "center", gap: 10 },
   modalCloseBtn: { width: 36, height: 36, borderRadius: 12, borderWidth: 1, alignItems: "center", justifyContent: "center" },
-
   tcmbBox: { borderWidth: 1, borderRadius: 14, padding: 12 },
 });
 
