@@ -39,8 +39,9 @@ const SEO_TITLE = "Net Mevduat – TL Vadeli Mevduat Net Getiri Hesaplama";
 const SEO_DESCRIPTION =
   "TL vadeli mevduat net getiri hesaplama aracı. Stopaj dahil net kazancınızı hızlı ve sade şekilde hesaplayın. 32/92/180 gün için piyasa aralığı bilgilendirmesi içerir.";
 
-// ✅ Glow’un butonların üstünde görünmesini engelleyen offset
-const GLOW_TOP_OFFSET = 140;
+// ✅ SEO (Domain)
+const SEO_URL = "https://netmevduat.net/";
+const SEO_IMAGE = "https://netmevduat.net/favicon.png"; // şimdilik yeterli (ileride 1200x630 og.png yaparız)
 
 type CalcResult = {
   gross: number;
@@ -81,11 +82,12 @@ function digitsOnly(text: string): string {
 
 function formatRateTR(input: string): string {
   let s = (input ?? "").toString();
-  // nokta basılsa bile virgüle çevir
+  // Nokta yazılırsa virgüle çevir
   s = s.replace(/\./g, ",");
-  // sadece rakam ve virgül
+  // Sadece rakam ve virgül
   s = s.replace(/[^0-9,]/g, "");
 
+  // Tek virgül kalsın
   const firstCommaIndex = s.indexOf(",");
   if (firstCommaIndex !== -1) {
     const before = s.slice(0, firstCommaIndex + 1);
@@ -248,7 +250,6 @@ export default function App() {
   const isDark = theme === "dark";
   const t = isDark ? dark : light;
 
-  // ✅ scroll-to-result
   const scrollRef = useRef<ScrollView | null>(null);
   const netCardYRef = useRef<number>(0);
 
@@ -274,19 +275,52 @@ export default function App() {
     setTcmbOpen(false);
   };
 
-  // SEO
+  // ✅ SEO (Web) — canonical + meta tags (index.html yokken en iyi yöntem)
   useEffect(() => {
     if (typeof document === "undefined") return;
+
     document.title = SEO_TITLE;
 
-    const existing = document.querySelector('meta[name="description"]') as HTMLMetaElement | null;
-    if (existing) existing.setAttribute("content", SEO_DESCRIPTION);
-    else {
-      const meta = document.createElement("meta");
-      meta.name = "description";
-      meta.content = SEO_DESCRIPTION;
-      document.head.appendChild(meta);
-    }
+    const upsertMeta = (selector: string, attrs: Record<string, string>) => {
+      let el = document.querySelector(selector) as HTMLMetaElement | null;
+      if (!el) {
+        el = document.createElement("meta");
+        document.head.appendChild(el);
+      }
+      Object.entries(attrs).forEach(([k, v]) => el!.setAttribute(k, v));
+    };
+
+    const upsertLink = (rel: string, href: string) => {
+      let el = document.querySelector(`link[rel="${rel}"]`) as HTMLLinkElement | null;
+      if (!el) {
+        el = document.createElement("link");
+        el.setAttribute("rel", rel);
+        document.head.appendChild(el);
+      }
+      el.setAttribute("href", href);
+    };
+
+    // canonical
+    upsertLink("canonical", SEO_URL);
+
+    // description
+    upsertMeta('meta[name="description"]', { name: "description", content: SEO_DESCRIPTION });
+
+    // OpenGraph
+    upsertMeta('meta[property="og:title"]', { property: "og:title", content: SEO_TITLE });
+    upsertMeta('meta[property="og:description"]', { property: "og:description", content: SEO_DESCRIPTION });
+    upsertMeta('meta[property="og:url"]', { property: "og:url", content: SEO_URL });
+    upsertMeta('meta[property="og:type"]', { property: "og:type", content: "website" });
+    upsertMeta('meta[property="og:image"]', { property: "og:image", content: SEO_IMAGE });
+
+    // Twitter
+    upsertMeta('meta[name="twitter:card"]', { name: "twitter:card", content: "summary" });
+    upsertMeta('meta[name="twitter:title"]', { name: "twitter:title", content: SEO_TITLE });
+    upsertMeta('meta[name="twitter:description"]', { name: "twitter:description", content: SEO_DESCRIPTION });
+    upsertMeta('meta[name="twitter:image"]', { name: "twitter:image", content: SEO_IMAGE });
+
+    // robots
+    upsertMeta('meta[name="robots"]', { name: "robots", content: "index,follow" });
   }, []);
 
   const principalNumber = useMemo(() => parsePrincipalInt(principalText), [principalText]);
@@ -435,8 +469,7 @@ export default function App() {
             Politika faizi: <Text style={{ color: t.text, fontWeight: "900" }}>%{TCMB_POLICY_RATE_PCT}</Text>
           </Text>
           <Text style={[styles.micro, { color: t.muted, marginTop: 6 }]}>
-            PPK karar tarihi:{" "}
-            <Text style={{ color: t.text, fontWeight: "900" }}>{TCMB_POLICY_RATE_DECISION_DATE}</Text>
+            PPK karar tarihi: <Text style={{ color: t.text, fontWeight: "900" }}>{TCMB_POLICY_RATE_DECISION_DATE}</Text>
           </Text>
           <Text style={[styles.micro, { color: t.muted, marginTop: 6 }]}>
             Sonraki PPK: <Text style={{ color: t.text, fontWeight: "900" }}>{TCMB_NEXT_MPC_MEETING_DATE}</Text>
@@ -456,13 +489,12 @@ export default function App() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={[styles.hero, { borderColor: t.border }]}>
-            {/* ✅ Glowlar: butonların altından başlat + tıklamayı engellemesin */}
+            {/* glowlar: arka plan */}
             <View
               pointerEvents="none"
               style={[
                 styles.heroGlow,
                 {
-                  top: GLOW_TOP_OFFSET - 220,
                   backgroundColor: isDark ? "rgba(64,247,178,0.07)" : "rgba(11,143,90,0.10)",
                 },
               ]}
@@ -472,7 +504,6 @@ export default function App() {
               style={[
                 styles.heroGlow2,
                 {
-                  bottom: -220,
                   backgroundColor: isDark ? "rgba(64,247,178,0.04)" : "rgba(11,143,90,0.06)",
                 },
               ]}
@@ -721,12 +752,11 @@ const styles = StyleSheet.create({
   container: { padding: 18, paddingBottom: 34 },
 
   hero: { borderWidth: 1, borderRadius: 22, padding: 14, overflow: "hidden" },
-  heroGlow: { position: "absolute", width: 420, height: 420, borderRadius: 999, left: -180 },
-  heroGlow2: { position: "absolute", width: 380, height: 380, borderRadius: 999, right: -180 },
+  heroGlow: { position: "absolute", width: 420, height: 420, borderRadius: 999, top: -220, left: -180 },
+  heroGlow2: { position: "absolute", width: 380, height: 380, borderRadius: 999, bottom: -220, right: -180 },
 
   topBar: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 12 },
   brand: { fontSize: 26, fontWeight: "900" },
-  // ✅ koyu temada overlap olmasın
   tagline: { marginTop: 2, fontSize: 12, fontWeight: "800", lineHeight: 16, marginBottom: 6 },
 
   themeBtn: { width: 44, height: 44, borderRadius: 14, borderWidth: 1, alignItems: "center", justifyContent: "center" },
@@ -735,7 +765,15 @@ const styles = StyleSheet.create({
   menuBtn: { flex: 1, borderWidth: 1, borderRadius: 14, paddingVertical: 10, alignItems: "center", justifyContent: "center" },
   menuText: { fontSize: 12, fontWeight: "900" },
 
-  netCard: { marginTop: 14, borderRadius: 20, borderWidth: 1, paddingVertical: 14, paddingHorizontal: 14, alignItems: "center", position: "relative" },
+  netCard: {
+    marginTop: 14,
+    borderRadius: 20,
+    borderWidth: 1,
+    paddingVertical: 14,
+    paddingHorizontal: 14,
+    alignItems: "center",
+    position: "relative",
+  },
   netTitle: { fontSize: 12, fontWeight: "900" },
   netValue: { fontSize: 42, fontWeight: "900", marginTop: 6 },
 
@@ -787,7 +825,14 @@ const styles = StyleSheet.create({
   ctaPrimary: { borderRadius: 16, paddingVertical: 12, alignItems: "center", justifyContent: "center", borderWidth: 1 },
   ctaPrimaryText: { fontSize: 13, fontWeight: "900" },
 
-  rangeLine: { borderWidth: 1, borderRadius: 14, paddingVertical: 11, paddingHorizontal: 12, flexDirection: "row", justifyContent: "space-between" },
+  rangeLine: {
+    borderWidth: 1,
+    borderRadius: 14,
+    paddingVertical: 11,
+    paddingHorizontal: 12,
+    flexDirection: "row",
+    justifyContent: "space-between",
+  },
   chip: { borderWidth: 1, borderRadius: 14, paddingVertical: 10, paddingHorizontal: 12 },
 
   seoBlock: { marginTop: 14, borderRadius: 18, borderWidth: 1, padding: 14 },
@@ -827,8 +872,7 @@ const dark = {
   pillBg: "#0B1020",
   pillActiveBg: "rgba(234,240,255,0.05)",
 
-  // ✅ KRİTİK FIX: Şeffaf değil, opak. Glow artık buton içinden görünmez.
-  menuBg: "#0B1020",
+  menuBg: "rgba(255,255,255,0.03)",
 };
 
 const light = {
