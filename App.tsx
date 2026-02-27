@@ -757,7 +757,7 @@ const styles = StyleSheet.create({
   hero: { borderWidth: 1, borderRadius: 22, padding: 14, overflow: "hidden", position: "relative" },
 
   // ✅ FIX: glow her zaman arkada
-  heroGlow: { position: "absolute", width: 420, height: 420, borderRadius: 999, top: -220, left: -180, zIndex: 0 },
+  heroGlow: { position: "absolute", width: 420, height: 420, borderRadius: 999, top: 80, left: -180, zIndex: 0 },
   heroGlow2: { position: "absolute", width: 380, height: 380, borderRadius: 999, bottom: -220, right: -180, zIndex: 0 },
 
   // ✅ FIX: içerik her zaman üstte
