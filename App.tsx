@@ -509,7 +509,7 @@ export default function App() {
               ]}
             />
 
-            {/* ✅ içerik katmanı üstte */}
+            {/* ✅ içerik katmanı (glow üstüne çıkmasın diye) */}
             <View style={styles.heroContent}>
               <View style={styles.topBar}>
                 <View style={{ flex: 1 }}>
@@ -685,7 +685,9 @@ export default function App() {
                           },
                         ]}
                       >
-                        <Text style={{ color: selectedDays === "custom" ? t.text : t.muted, fontWeight: "900" }}>Özel</Text>
+                        <Text style={{ color: selectedDays === "custom" ? t.text : t.muted, fontWeight: "900" }}>
+                          Özel
+                        </Text>
                       </Pressable>
                     </View>
 
@@ -715,7 +717,9 @@ export default function App() {
                     }}
                     style={[styles.ctaPrimary, { backgroundColor: t.accent, borderColor: t.accentBorder }]}
                   >
-                    <Text style={[styles.ctaPrimaryText, { color: isDark ? "#062217" : "#FFFFFF" }]}>Hemen Hesapla</Text>
+                    <Text style={[styles.ctaPrimaryText, { color: isDark ? "#062217" : "#FFFFFF" }]}>
+                      Hemen Hesapla
+                    </Text>
                   </Pressable>
                 </View>
               </View>
@@ -726,20 +730,22 @@ export default function App() {
           <View style={[styles.seoBlock, { backgroundColor: t.card, borderColor: t.border }]}>
             <Text style={[styles.seoH2, { color: t.text }]}>Vadeli Mevduat Nedir?</Text>
             <Text style={[styles.seoP, { color: t.muted }]}>
-              Vadeli mevduat, bankaya belirli bir süre için yatırılan paranın faiz getirisi elde etmesini sağlayan bir tasarruf ürünüdür.
-              NetMevduat.net üzerinden brüt ve net faiz getirilerinizi stopaj kesintisi dahil hesaplayabilirsiniz.
+              Vadeli mevduat, bankaya belirli bir süre için yatırılan paranın faiz getirisi elde etmesini sağlayan bir
+              tasarruf ürünüdür. NetMevduat.net üzerinden brüt ve net faiz getirilerinizi stopaj kesintisi dahil
+              hesaplayabilirsiniz.
             </Text>
 
             <Text style={[styles.seoH3, { color: t.text }]}>Stopaj Oranları Nasıl Hesaplanır?</Text>
             <Text style={[styles.seoP, { color: t.muted }]}>
-              Türkiye’de vadeli mevduatta stopaj oranı vadeye göre değişebilir. Bu araç, seçtiğiniz vade gününe göre stopajı otomatik uygular ve net kazancı gösterir.
-              Yine de nihai oranlar için resmi kaynakları kontrol etmeniz önerilir.
+              Türkiye’de vadeli mevduatta stopaj oranı vadeye göre değişebilir. Bu araç, seçtiğiniz vade gününe göre
+              stopajı otomatik uygular ve net kazancı gösterir. Yine de nihai oranlar için resmi kaynakları kontrol
+              etmeniz önerilir.
             </Text>
 
             <Text style={[styles.seoH3, { color: t.text }]}>Mevduat Net Getiri Hesaplama</Text>
             <Text style={[styles.seoP, { color: t.muted }]}>
-              Anapara, faiz oranı ve vade gününü girerek brüt getiri, stopaj kesintisi ve net kazancı tek ekranda görebilirsiniz.
-              Piyasa aralığı bölümü ise sadece bilgilendirme amaçlı referans sağlar.
+              Anapara, faiz oranı ve vade gününü girerek brüt getiri, stopaj kesintisi ve net kazancı tek ekranda
+              görebilirsiniz. Piyasa aralığı bölümü ise sadece bilgilendirme amaçlı referans sağlar.
             </Text>
           </View>
 
@@ -754,15 +760,35 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   container: { padding: 18, paddingBottom: 34 },
 
-  // ✅ position relative + zIndex düzeni
+  // ✅ kritik: position relative + katman kontrolü
   hero: { borderWidth: 1, borderRadius: 22, padding: 14, overflow: "hidden", position: "relative" },
 
-  // Glowlar arkada kalsın
-  heroGlow: { position: "absolute", width: 420, height: 420, borderRadius: 999, top: -220, left: -180, zIndex: 0 },
-  heroGlow2: { position: "absolute", width: 380, height: 380, borderRadius: 999, bottom: -220, right: -180, zIndex: 0 },
+  // glow arkada (asla üstte olmayacak)
+  heroGlow: {
+    position: "absolute",
+    width: 420,
+    height: 420,
+    borderRadius: 999,
+    top: -220,
+    left: -180,
+    zIndex: 0,
+  },
+  heroGlow2: {
+    position: "absolute",
+    width: 380,
+    height: 380,
+    borderRadius: 999,
+    bottom: -220,
+    right: -180,
+    zIndex: 0,
+  },
 
-  // İçerik (başlık + butonlar + kartlar) üstte kalsın
-  heroContent: { position: "relative", zIndex: 1 },
+  // içerik kesin üstte
+  heroContent: {
+    position: "relative",
+    zIndex: 1,
+    ...(Platform.OS === "android" ? { elevation: 1 } : null),
+  },
 
   topBar: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 12 },
   brand: { fontSize: 26, fontWeight: "900" },
