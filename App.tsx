@@ -41,7 +41,7 @@ const SEO_DESCRIPTION =
 
 // ✅ SEO (Domain)
 const SEO_URL = "https://netmevduat.net/";
-const SEO_IMAGE = "https://netmevduat.net/favicon.png"; // şimdilik yeterli (ileride 1200x630 og.png yaparız)
+const SEO_IMAGE = "https://netmevduat.net/og.png"; // 1200x630 OG görsel
 
 type CalcResult = {
   gross: number;
@@ -303,24 +303,27 @@ export default function App() {
     // canonical
     upsertLink("canonical", SEO_URL);
 
+    // robots
+    upsertMeta('meta[name="robots"]', { name: "robots", content: "index,follow" });
+
     // description
     upsertMeta('meta[name="description"]', { name: "description", content: SEO_DESCRIPTION });
 
-    // OpenGraph
+    // OpenGraph (WhatsApp/Telegram/Discord vb.)
+    upsertMeta('meta[property="og:type"]', { property: "og:type", content: "website" });
+    upsertMeta('meta[property="og:site_name"]', { property: "og:site_name", content: "netmevduat.net" });
+    upsertMeta('meta[property="og:url"]', { property: "og:url", content: SEO_URL });
     upsertMeta('meta[property="og:title"]', { property: "og:title", content: SEO_TITLE });
     upsertMeta('meta[property="og:description"]', { property: "og:description", content: SEO_DESCRIPTION });
-    upsertMeta('meta[property="og:url"]', { property: "og:url", content: SEO_URL });
-    upsertMeta('meta[property="og:type"]', { property: "og:type", content: "website" });
     upsertMeta('meta[property="og:image"]', { property: "og:image", content: SEO_IMAGE });
+    upsertMeta('meta[property="og:image:width"]', { property: "og:image:width", content: "1200" });
+    upsertMeta('meta[property="og:image:height"]', { property: "og:image:height", content: "630" });
 
-    // Twitter
-    upsertMeta('meta[name="twitter:card"]', { name: "twitter:card", content: "summary" });
+    // Twitter / X
+    upsertMeta('meta[name="twitter:card"]', { name: "twitter:card", content: "summary_large_image" });
     upsertMeta('meta[name="twitter:title"]', { name: "twitter:title", content: SEO_TITLE });
     upsertMeta('meta[name="twitter:description"]', { name: "twitter:description", content: SEO_DESCRIPTION });
     upsertMeta('meta[name="twitter:image"]', { name: "twitter:image", content: SEO_IMAGE });
-
-    // robots
-    upsertMeta('meta[name="robots"]', { name: "robots", content: "index,follow" });
   }, []);
 
   const principalNumber = useMemo(() => parsePrincipalInt(principalText), [principalText]);
@@ -723,20 +726,22 @@ export default function App() {
           <View style={[styles.seoBlock, { backgroundColor: t.card, borderColor: t.border }]}>
             <Text style={[styles.seoH2, { color: t.text }]}>Vadeli Mevduat Nedir?</Text>
             <Text style={[styles.seoP, { color: t.muted }]}>
-              Vadeli mevduat, bankaya belirli bir süre için yatırılan paranın faiz getirisi elde etmesini sağlayan bir tasarruf ürünüdür.
-              NetMevduat.net üzerinden brüt ve net faiz getirilerinizi stopaj kesintisi dahil hesaplayabilirsiniz.
+              Vadeli mevduat, bankaya belirli bir süre için yatırılan paranın faiz getirisi elde etmesini sağlayan bir
+              tasarruf ürünüdür. NetMevduat.net üzerinden brüt ve net faiz getirilerinizi stopaj kesintisi dahil
+              hesaplayabilirsiniz.
             </Text>
 
             <Text style={[styles.seoH3, { color: t.text }]}>Stopaj Oranları Nasıl Hesaplanır?</Text>
             <Text style={[styles.seoP, { color: t.muted }]}>
-              Türkiye’de vadeli mevduatta stopaj oranı vadeye göre değişebilir. Bu araç, seçtiğiniz vade gününe göre stopajı otomatik uygular ve net kazancı gösterir.
-              Yine de nihai oranlar için resmi kaynakları kontrol etmeniz önerilir.
+              Türkiye’de vadeli mevduatta stopaj oranı vadeye göre değişebilir. Bu araç, seçtiğiniz vade gününe göre
+              stopajı otomatik uygular ve net kazancı gösterir. Yine de nihai oranlar için resmi kaynakları kontrol
+              etmeniz önerilir.
             </Text>
 
             <Text style={[styles.seoH3, { color: t.text }]}>Mevduat Net Getiri Hesaplama</Text>
             <Text style={[styles.seoP, { color: t.muted }]}>
-              Anapara, faiz oranı ve vade gününü girerek brüt getiri, stopaj kesintisi ve net kazancı tek ekranda görebilirsiniz.
-              Piyasa aralığı bölümü ise sadece bilgilendirme amaçlı referans sağlar.
+              Anapara, faiz oranı ve vade gününü girerek brüt getiri, stopaj kesintisi ve net kazancı tek ekranda
+              görebilirsiniz. Piyasa aralığı bölümü ise sadece bilgilendirme amaçlı referans sağlar.
             </Text>
           </View>
 
