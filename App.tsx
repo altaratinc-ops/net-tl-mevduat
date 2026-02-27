@@ -509,7 +509,8 @@ export default function App() {
               ]}
             />
 
-            <View style={styles.topBar}>
+                        <View style={[styles.headerShield, { backgroundColor: t.bg }]}>
+<View style={styles.topBar}>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.brand, { color: t.text }]}>Net Mevduat</Text>
                 <Text style={[styles.tagline, { color: t.muted }]}>TL vadeli mevduat net getiri hesaplama</Text>
@@ -539,6 +540,8 @@ export default function App() {
                 <Text style={[styles.menuText, { color: t.text }]}>Faiz Kararı</Text>
               </Pressable>
             </View>
+            </View>
+
 
             <Animated.View
               onLayout={onNetCardLayout}
@@ -759,6 +762,9 @@ const styles = StyleSheet.create({
   // ✅ FIX: glow her zaman arkada
   heroGlow: { position: "absolute", width: 420, height: 420, borderRadius: 999, top: -220, left: -180, zIndex: 0 },
   heroGlow2: { position: "absolute", width: 380, height: 380, borderRadius: 999, bottom: -220, right: -180, zIndex: 0 },
+
+  // ✅ FIX: header bölgesi glow görünmesin
+  headerShield: { borderRadius: 18, paddingBottom: 10 },
 
   // ✅ FIX: içerik her zaman üstte
   topBar: {
