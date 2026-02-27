@@ -509,219 +509,212 @@ export default function App() {
               ]}
             />
 
-            {/* ✅ içerik katmanı (glow üstüne çıkmasın diye) */}
-            <View style={styles.heroContent}>
-              <View style={styles.topBar}>
-                <View style={{ flex: 1 }}>
-                  <Text style={[styles.brand, { color: t.text }]}>Net Mevduat</Text>
-                  <Text style={[styles.tagline, { color: t.muted }]}>TL vadeli mevduat net getiri hesaplama</Text>
-                </View>
-
-                <Pressable
-                  onPress={() => setTheme((p) => (p === "dark" ? "light" : "dark"))}
-                  style={[styles.themeBtn, { backgroundColor: t.card, borderColor: t.border }]}
-                >
-                  <Text style={{ color: t.text, fontWeight: "900" }}>{isDark ? "🌙" : "☀️"}</Text>
-                </Pressable>
+            <View style={styles.topBar}>
+              <View style={{ flex: 1 }}>
+                <Text style={[styles.brand, { color: t.text }]}>Net Mevduat</Text>
+                <Text style={[styles.tagline, { color: t.muted }]}>TL vadeli mevduat net getiri hesaplama</Text>
               </View>
 
-              {/* Üst menü: Piyasa + Faiz Kararı */}
-              <View style={[styles.menuRow, { borderColor: t.border }]}>
-                <Pressable
-                  onPress={() => (marketOpen ? closeAll() : openMarket())}
-                  style={[styles.menuBtn, { backgroundColor: t.menuBg, borderColor: t.border }]}
-                >
-                  <Text style={[styles.menuText, { color: t.text }]}>Piyasa</Text>
-                </Pressable>
-
-                <Pressable
-                  onPress={() => (tcmbOpen ? closeAll() : openTcmb())}
-                  style={[styles.menuBtn, { backgroundColor: t.menuBg, borderColor: t.border }]}
-                >
-                  <Text style={[styles.menuText, { color: t.text }]}>Faiz Kararı</Text>
-                </Pressable>
-              </View>
-
-              <Animated.View
-                onLayout={onNetCardLayout}
-                style={[
-                  styles.netCard,
-                  { backgroundColor: t.netBg, borderColor: t.netBorder, transform: [{ scale: pulse }] },
-                ]}
+              <Pressable
+                onPress={() => setTheme((p) => (p === "dark" ? "light" : "dark"))}
+                style={[styles.themeBtn, { backgroundColor: t.card, borderColor: t.border }]}
               >
-                <Animated.View
-                  pointerEvents="none"
-                  style={[
-                    StyleSheet.absoluteFillObject,
-                    {
-                      borderRadius: 20,
-                      opacity: flashOpacity,
-                      backgroundColor: isDark ? "rgba(64,247,178,0.10)" : "rgba(11,143,90,0.10)",
-                    },
-                  ]}
-                />
+                <Text style={{ color: t.text, fontWeight: "900" }}>{isDark ? "🌙" : "☀️"}</Text>
+              </Pressable>
+            </View>
 
-                <Pressable onPress={onCopy} disabled={!canCalculate} style={[styles.copyBtn, { borderColor: t.netBorder }]}>
-                  <Text style={{ color: canCalculate ? t.accent : t.placeholder, fontWeight: "900" }}>
-                    {copied ? "✓" : "⧉"}
-                  </Text>
-                </Pressable>
+            {/* Üst menü: Piyasa + Faiz Kararı */}
+            <View style={[styles.menuRow, { borderColor: t.border }]}>
+              <Pressable
+                onPress={() => (marketOpen ? closeAll() : openMarket())}
+                style={[styles.menuBtn, { backgroundColor: t.menuBg, borderColor: t.border }]}
+              >
+                <Text style={[styles.menuText, { color: t.text }]}>Piyasa</Text>
+              </Pressable>
 
-                <Text style={[styles.netTitle, { color: t.muted }]}>Elinize geçecek net TL</Text>
-                <Text style={[styles.netValue, { color: canCalculate ? t.accent : t.placeholder }]}>
-                  + {formatTLInt(canCalculate ? result.net : 0)} TL
+              <Pressable
+                onPress={() => (tcmbOpen ? closeAll() : openTcmb())}
+                style={[styles.menuBtn, { backgroundColor: t.menuBg, borderColor: t.border }]}
+              >
+                <Text style={[styles.menuText, { color: t.text }]}>Faiz Kararı</Text>
+              </Pressable>
+            </View>
+
+            <Animated.View
+              onLayout={onNetCardLayout}
+              style={[
+                styles.netCard,
+                { backgroundColor: t.netBg, borderColor: t.netBorder, transform: [{ scale: pulse }] },
+              ]}
+            >
+              <Animated.View
+                pointerEvents="none"
+                style={[
+                  StyleSheet.absoluteFillObject,
+                  {
+                    borderRadius: 20,
+                    opacity: flashOpacity,
+                    backgroundColor: isDark ? "rgba(64,247,178,0.10)" : "rgba(11,143,90,0.10)",
+                  },
+                ]}
+              />
+
+              <Pressable onPress={onCopy} disabled={!canCalculate} style={[styles.copyBtn, { borderColor: t.netBorder }]}>
+                <Text style={{ color: canCalculate ? t.accent : t.placeholder, fontWeight: "900" }}>
+                  {copied ? "✓" : "⧉"}
                 </Text>
+              </Pressable>
 
-                <View style={styles.metaRow}>
-                  <View style={[styles.metaPill, { backgroundColor: t.metaBg, borderColor: t.netBorder }]}>
-                    <Text style={{ color: t.muted, fontWeight: "900", fontSize: 12 }}>Vade: {effectiveDays} gün</Text>
-                  </View>
-                  <View style={[styles.metaPill, { backgroundColor: t.metaBg, borderColor: t.netBorder }]}>
-                    <Text style={{ color: t.muted, fontWeight: "900", fontSize: 12 }}>Stopaj: %{result.stopajPctUsed}</Text>
-                  </View>
+              <Text style={[styles.netTitle, { color: t.muted }]}>Elinize geçecek net TL</Text>
+              <Text style={[styles.netValue, { color: canCalculate ? t.accent : t.placeholder }]}>
+                + {formatTLInt(canCalculate ? result.net : 0)} TL
+              </Text>
+
+              <View style={styles.metaRow}>
+                <View style={[styles.metaPill, { backgroundColor: t.metaBg, borderColor: t.netBorder }]}>
+                  <Text style={{ color: t.muted, fontWeight: "900", fontSize: 12 }}>Vade: {effectiveDays} gün</Text>
                 </View>
-
-                <View style={[styles.miniInfoRow, { borderColor: t.netBorder }]}>
-                  <Text style={[styles.miniInfoText, { color: t.muted }]} numberOfLines={2}>
-                    {miniMarketText}
-                  </Text>
-                  <Pressable onPress={openMarket} style={[styles.miniInfoBtn, { borderColor: t.netBorder }]}>
-                    <Text style={{ color: t.accent, fontWeight: "900", fontSize: 12 }}>Aç</Text>
-                  </Pressable>
+                <View style={[styles.metaPill, { backgroundColor: t.metaBg, borderColor: t.netBorder }]}>
+                  <Text style={{ color: t.muted, fontWeight: "900", fontSize: 12 }}>Stopaj: %{result.stopajPctUsed}</Text>
                 </View>
-
-                <Text style={[styles.micro, { color: t.muted }]}>
-                  Bilgilendirme amaçlıdır. Sonuçlar girdiğiniz faiz oranına göre hesaplanır.
-                </Text>
-              </Animated.View>
-
-              {/* Küçük Detay */}
-              <View style={[styles.compactDetail, { backgroundColor: t.card, borderColor: t.border }]}>
-                <View style={styles.compactRow}>
-                  <View style={styles.compactItem}>
-                    <Text style={[styles.compactLabel, { color: t.muted }]}>Brüt</Text>
-                    <Text style={[styles.compactValue, { color: t.text }]}>{formatTLInt(result.gross)} TL</Text>
-                  </View>
-
-                  <View style={[styles.compactDivider, { backgroundColor: t.border }]} />
-
-                  <View style={styles.compactItem}>
-                    <Text style={[styles.compactLabel, { color: t.muted }]}>Stopaj</Text>
-                    <Text style={[styles.compactValue, { color: t.text }]}>{formatTLInt(result.withholding)} TL</Text>
-                  </View>
-
-                  <View style={[styles.compactDivider, { backgroundColor: t.border }]} />
-
-                  <View style={styles.compactItem}>
-                    <Text style={[styles.compactLabel, { color: t.muted }]}>EAY</Text>
-                    <Text style={[styles.compactValue, { color: t.text }]}>{result.eay.toFixed(1)}%</Text>
-                  </View>
-                </View>
-                <Text style={[styles.micro, { color: t.muted, marginTop: 8 }]}>
-                  Vade: {effectiveDays} gün — Uygulanan stopaj: %{result.stopajPctUsed}
-                </Text>
               </View>
 
-              {/* Inputs */}
-              <View style={[styles.heroInputs, { backgroundColor: t.card, borderColor: t.border }]}>
-                <View style={{ gap: 10 }}>
-                  <View>
-                    <Text style={[styles.label, { color: t.muted }]}>Anapara (TL)</Text>
-                    <TextInput
-                      value={principalText}
-                      onChangeText={(v) => setPrincipalText(formatThousandsTR(v))}
-                      keyboardType="numeric"
-                      placeholder="Örn: 100.000"
-                      placeholderTextColor={t.placeholder}
-                      style={[styles.input, { backgroundColor: t.inputBg, borderColor: t.border, color: t.text }]}
-                    />
-                  </View>
+              <View style={[styles.miniInfoRow, { borderColor: t.netBorder }]}>
+                <Text style={[styles.miniInfoText, { color: t.muted }]} numberOfLines={2}>
+                  {miniMarketText}
+                </Text>
+                <Pressable onPress={openMarket} style={[styles.miniInfoBtn, { borderColor: t.netBorder }]}>
+                  <Text style={{ color: t.accent, fontWeight: "900", fontSize: 12 }}>Aç</Text>
+                </Pressable>
+              </View>
 
-                  <View>
-                    <Text style={[styles.label, { color: t.muted }]}>Faiz Oranı (%)</Text>
-                    <TextInput
-                      value={rateText}
-                      onChangeText={(v) => setRateText(formatRateTR(v))}
-                      keyboardType="numeric"
-                      placeholder="Örn: 42,5"
-                      placeholderTextColor={t.placeholder}
-                      style={[styles.input, { backgroundColor: t.inputBg, borderColor: t.border, color: t.text }]}
-                    />
-                    <Text style={[styles.micro, { color: t.muted }]}>Ondalık için virgül (örn: 37,5).</Text>
-                  </View>
+              <Text style={[styles.micro, { color: t.muted }]}>
+                Bilgilendirme amaçlıdır. Sonuçlar girdiğiniz faiz oranına göre hesaplanır.
+              </Text>
+            </Animated.View>
 
-                  <View>
-                    <Text style={[styles.label, { color: t.muted }]}>Vade (Gün)</Text>
-                    <View style={styles.pills}>
-                      {[32, 92, 180].map((d) => {
-                        const active = selectedDays === d;
-                        return (
-                          <Pressable
-                            key={d}
-                            onPress={() => {
-                              setSelectedDays(d as 32 | 92 | 180);
-                              setCustomDaysText(String(d));
-                            }}
-                            style={[
-                              styles.pill,
-                              {
-                                backgroundColor: active ? t.pillActiveBg : t.pillBg,
-                                borderColor: active ? t.accentBorder : t.border,
-                              },
-                            ]}
-                          >
-                            <Text style={{ color: active ? t.text : t.muted, fontWeight: "900" }}>{d}</Text>
-                          </Pressable>
-                        );
-                      })}
-
-                      <Pressable
-                        onPress={() => setSelectedDays("custom")}
-                        style={[
-                          styles.pill,
-                          {
-                            backgroundColor: selectedDays === "custom" ? t.pillActiveBg : t.pillBg,
-                            borderColor: selectedDays === "custom" ? t.accentBorder : t.border,
-                          },
-                        ]}
-                      >
-                        <Text style={{ color: selectedDays === "custom" ? t.text : t.muted, fontWeight: "900" }}>
-                          Özel
-                        </Text>
-                      </Pressable>
-                    </View>
-
-                    {selectedDays === "custom" && (
-                      <TextInput
-                        value={customDaysText}
-                        onChangeText={(v) => setCustomDaysText(digitsOnly(v))}
-                        keyboardType="numeric"
-                        placeholder="Gün girin (ör. 35 / 400)"
-                        placeholderTextColor={t.placeholder}
-                        style={[
-                          styles.input,
-                          { marginTop: 10, backgroundColor: t.inputBg, borderColor: t.border, color: t.text },
-                        ]}
-                      />
-                    )}
-                  </View>
+            {/* Küçük Detay */}
+            <View style={[styles.compactDetail, { backgroundColor: t.card, borderColor: t.border }]}>
+              <View style={styles.compactRow}>
+                <View style={styles.compactItem}>
+                  <Text style={[styles.compactLabel, { color: t.muted }]}>Brüt</Text>
+                  <Text style={[styles.compactValue, { color: t.text }]}>{formatTLInt(result.gross)} TL</Text>
                 </View>
 
-                {/* CTA: Hemen Hesapla → Net karta götür */}
-                <View style={{ marginTop: 12 }}>
-                  <Pressable
-                    onPress={() => {
-                      closeAll();
-                      flashNetCard();
-                      scrollToNetCard();
-                    }}
-                    style={[styles.ctaPrimary, { backgroundColor: t.accent, borderColor: t.accentBorder }]}
-                  >
-                    <Text style={[styles.ctaPrimaryText, { color: isDark ? "#062217" : "#FFFFFF" }]}>
-                      Hemen Hesapla
-                    </Text>
-                  </Pressable>
+                <View style={[styles.compactDivider, { backgroundColor: t.border }]} />
+
+                <View style={styles.compactItem}>
+                  <Text style={[styles.compactLabel, { color: t.muted }]}>Stopaj</Text>
+                  <Text style={[styles.compactValue, { color: t.text }]}>{formatTLInt(result.withholding)} TL</Text>
                 </View>
+
+                <View style={[styles.compactDivider, { backgroundColor: t.border }]} />
+
+                <View style={styles.compactItem}>
+                  <Text style={[styles.compactLabel, { color: t.muted }]}>EAY</Text>
+                  <Text style={[styles.compactValue, { color: t.text }]}>{result.eay.toFixed(1)}%</Text>
+                </View>
+              </View>
+              <Text style={[styles.micro, { color: t.muted, marginTop: 8 }]}>
+                Vade: {effectiveDays} gün — Uygulanan stopaj: %{result.stopajPctUsed}
+              </Text>
+            </View>
+
+            {/* Inputs */}
+            <View style={[styles.heroInputs, { backgroundColor: t.card, borderColor: t.border }]}>
+              <View style={{ gap: 10 }}>
+                <View>
+                  <Text style={[styles.label, { color: t.muted }]}>Anapara (TL)</Text>
+                  <TextInput
+                    value={principalText}
+                    onChangeText={(v) => setPrincipalText(formatThousandsTR(v))}
+                    keyboardType="numeric"
+                    placeholder="Örn: 100.000"
+                    placeholderTextColor={t.placeholder}
+                    style={[styles.input, { backgroundColor: t.inputBg, borderColor: t.border, color: t.text }]}
+                  />
+                </View>
+
+                <View>
+                  <Text style={[styles.label, { color: t.muted }]}>Faiz Oranı (%)</Text>
+                  <TextInput
+                    value={rateText}
+                    onChangeText={(v) => setRateText(formatRateTR(v))}
+                    keyboardType="numeric"
+                    placeholder="Örn: 42,5"
+                    placeholderTextColor={t.placeholder}
+                    style={[styles.input, { backgroundColor: t.inputBg, borderColor: t.border, color: t.text }]}
+                  />
+                  <Text style={[styles.micro, { color: t.muted }]}>Ondalık için virgül (örn: 37,5).</Text>
+                </View>
+
+                <View>
+                  <Text style={[styles.label, { color: t.muted }]}>Vade (Gün)</Text>
+                  <View style={styles.pills}>
+                    {[32, 92, 180].map((d) => {
+                      const active = selectedDays === d;
+                      return (
+                        <Pressable
+                          key={d}
+                          onPress={() => {
+                            setSelectedDays(d as 32 | 92 | 180);
+                            setCustomDaysText(String(d));
+                          }}
+                          style={[
+                            styles.pill,
+                            {
+                              backgroundColor: active ? t.pillActiveBg : t.pillBg,
+                              borderColor: active ? t.accentBorder : t.border,
+                            },
+                          ]}
+                        >
+                          <Text style={{ color: active ? t.text : t.muted, fontWeight: "900" }}>{d}</Text>
+                        </Pressable>
+                      );
+                    })}
+
+                    <Pressable
+                      onPress={() => setSelectedDays("custom")}
+                      style={[
+                        styles.pill,
+                        {
+                          backgroundColor: selectedDays === "custom" ? t.pillActiveBg : t.pillBg,
+                          borderColor: selectedDays === "custom" ? t.accentBorder : t.border,
+                        },
+                      ]}
+                    >
+                      <Text style={{ color: selectedDays === "custom" ? t.text : t.muted, fontWeight: "900" }}>Özel</Text>
+                    </Pressable>
+                  </View>
+
+                  {selectedDays === "custom" && (
+                    <TextInput
+                      value={customDaysText}
+                      onChangeText={(v) => setCustomDaysText(digitsOnly(v))}
+                      keyboardType="numeric"
+                      placeholder="Gün girin (ör. 35 / 400)"
+                      placeholderTextColor={t.placeholder}
+                      style={[
+                        styles.input,
+                        { marginTop: 10, backgroundColor: t.inputBg, borderColor: t.border, color: t.text },
+                      ]}
+                    />
+                  )}
+                </View>
+              </View>
+
+              {/* CTA: Hemen Hesapla → Net karta götür */}
+              <View style={{ marginTop: 12 }}>
+                <Pressable
+                  onPress={() => {
+                    closeAll();
+                    flashNetCard();
+                    scrollToNetCard();
+                  }}
+                  style={[styles.ctaPrimary, { backgroundColor: t.accent, borderColor: t.accentBorder }]}
+                >
+                  <Text style={[styles.ctaPrimaryText, { color: isDark ? "#062217" : "#FFFFFF" }]}>Hemen Hesapla</Text>
+                </Pressable>
               </View>
             </View>
           </View>
@@ -760,46 +753,34 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   container: { padding: 18, paddingBottom: 34 },
 
-  // ✅ kritik: position relative + katman kontrolü
+  // ✅ FIX: stacking context
   hero: { borderWidth: 1, borderRadius: 22, padding: 14, overflow: "hidden", position: "relative" },
 
-  // glow arkada (asla üstte olmayacak)
-  heroGlow: {
-    position: "absolute",
-    width: 420,
-    height: 420,
-    borderRadius: 999,
-    top: -220,
-    left: -180,
-    zIndex: 0,
-  },
-  heroGlow2: {
-    position: "absolute",
-    width: 380,
-    height: 380,
-    borderRadius: 999,
-    bottom: -220,
-    right: -180,
-    zIndex: 0,
-  },
+  // ✅ FIX: glow her zaman arkada
+  heroGlow: { position: "absolute", width: 420, height: 420, borderRadius: 999, top: -220, left: -180, zIndex: 0 },
+  heroGlow2: { position: "absolute", width: 380, height: 380, borderRadius: 999, bottom: -220, right: -180, zIndex: 0 },
 
-  // içerik kesin üstte
-  heroContent: {
+  // ✅ FIX: içerik her zaman üstte
+  topBar: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "flex-start",
+    gap: 12,
     position: "relative",
-    zIndex: 1,
-    ...(Platform.OS === "android" ? { elevation: 1 } : null),
+    zIndex: 2,
   },
 
-  topBar: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 12 },
   brand: { fontSize: 26, fontWeight: "900" },
   tagline: { marginTop: 2, fontSize: 12, fontWeight: "800", lineHeight: 16, marginBottom: 6 },
 
   themeBtn: { width: 44, height: 44, borderRadius: 14, borderWidth: 1, alignItems: "center", justifyContent: "center" },
 
-  menuRow: { marginTop: 8, flexDirection: "row", gap: 8, borderTopWidth: 1, paddingTop: 12 },
+  // ✅ FIX
+  menuRow: { marginTop: 8, flexDirection: "row", gap: 8, borderTopWidth: 1, paddingTop: 12, position: "relative", zIndex: 2 },
   menuBtn: { flex: 1, borderWidth: 1, borderRadius: 14, paddingVertical: 10, alignItems: "center", justifyContent: "center" },
   menuText: { fontSize: 12, fontWeight: "900" },
 
+  // ✅ FIX
   netCard: {
     marginTop: 14,
     borderRadius: 20,
@@ -808,6 +789,8 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     alignItems: "center",
     position: "relative",
+    zIndex: 2,
+    ...(Platform.OS === "android" ? { elevation: 2 } : null),
   },
   netTitle: { fontSize: 12, fontWeight: "900" },
   netValue: { fontSize: 42, fontWeight: "900", marginTop: 6 },
@@ -841,14 +824,16 @@ const styles = StyleSheet.create({
   miniInfoText: { flex: 1, fontSize: 11, fontWeight: "800", lineHeight: 16 },
   miniInfoBtn: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 7 },
 
-  compactDetail: { marginTop: 12, borderRadius: 18, borderWidth: 1, padding: 12 },
+  // ✅ FIX
+  compactDetail: { marginTop: 12, borderRadius: 18, borderWidth: 1, padding: 12, position: "relative", zIndex: 2 },
   compactRow: { flexDirection: "row", alignItems: "center" },
   compactItem: { flex: 1, alignItems: "center" },
   compactLabel: { fontSize: 11, fontWeight: "900" },
   compactValue: { marginTop: 4, fontSize: 13, fontWeight: "900" },
   compactDivider: { width: 1, height: 34, marginHorizontal: 8 },
 
-  heroInputs: { marginTop: 12, borderRadius: 20, borderWidth: 1, padding: 14 },
+  // ✅ FIX
+  heroInputs: { marginTop: 12, borderRadius: 20, borderWidth: 1, padding: 14, position: "relative", zIndex: 2 },
 
   label: { fontSize: 12, fontWeight: "900", marginBottom: 6, marginTop: 6 },
   input: { borderWidth: 1, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 11, fontSize: 16, fontWeight: "800" },
