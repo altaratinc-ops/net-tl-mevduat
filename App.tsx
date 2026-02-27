@@ -498,7 +498,7 @@ export default function App() {
               style={[
                 styles.heroGlow,
                 {
-                  backgroundColor: isDark ? "rgba(64,247,178,0.07)" : "rgba(11,143,90,0.10)",
+                  backgroundColor: isDark ? "rgba(64, 247, 178, 0.07)" : "rgba(11, 143, 90, 0.10)",
                 },
               ]}
             />
@@ -507,7 +507,7 @@ export default function App() {
               style={[
                 styles.heroGlow2,
                 {
-                  backgroundColor: isDark ? "rgba(64,247,178,0.04)" : "rgba(11,143,90,0.06)",
+                  backgroundColor: isDark ? "rgba(64, 247, 178, 0.04)" : "rgba(11, 143, 90, 0.06)",
                 },
               ]}
             />
@@ -756,9 +756,20 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   container: { padding: 18, paddingBottom: 34 },
 
-  hero: { borderWidth: 1, borderRadius: 22, padding: 14, overflow: "hidden" },
-  heroGlow: { position: "absolute", width: 420, height: 420, borderRadius: 999, top: -220, left: -180 },
-  heroGlow2: { position: "absolute", width: 380, height: 380, borderRadius: 999, bottom: -220, right: -180 },
+  // ✅ FIX: glow'lar başlık/menünün üstüne çıkmasın
+  hero: { borderWidth: 1, borderRadius: 22, padding: 14, overflow: "hidden", position: "relative" },
+
+  // ✅ FIX: glow'ları EN ARKAYA gönder
+  heroGlow: { position: "absolute", width: 420, height: 420, borderRadius: 999, top: -220, left: -180, zIndex: -1 },
+  heroGlow2: {
+    position: "absolute",
+    width: 380,
+    height: 380,
+    borderRadius: 999,
+    bottom: -220,
+    right: -180,
+    zIndex: -1,
+  },
 
   topBar: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 12 },
   brand: { fontSize: 26, fontWeight: "900" },
