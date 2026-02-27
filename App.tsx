@@ -41,7 +41,7 @@ const SEO_DESCRIPTION =
 
 // ✅ SEO (Domain)
 const SEO_URL = "https://netmevduat.net/";
-const SEO_IMAGE = "https://netmevduat.net/og.png"; // 1200x630 OG görsel
+const SEO_IMAGE = "https://netmevduat.net/favicon.png"; // şimdilik yeterli (ileride 1200x630 og.png yaparız)
 
 type CalcResult = {
   gross: number;
@@ -303,27 +303,24 @@ export default function App() {
     // canonical
     upsertLink("canonical", SEO_URL);
 
-    // robots
-    upsertMeta('meta[name="robots"]', { name: "robots", content: "index,follow" });
-
     // description
     upsertMeta('meta[name="description"]', { name: "description", content: SEO_DESCRIPTION });
 
     // OpenGraph
-    upsertMeta('meta[property="og:type"]', { property: "og:type", content: "website" });
-    upsertMeta('meta[property="og:site_name"]', { property: "og:site_name", content: "netmevduat.net" });
-    upsertMeta('meta[property="og:url"]', { property: "og:url", content: SEO_URL });
     upsertMeta('meta[property="og:title"]', { property: "og:title", content: SEO_TITLE });
     upsertMeta('meta[property="og:description"]', { property: "og:description", content: SEO_DESCRIPTION });
+    upsertMeta('meta[property="og:url"]', { property: "og:url", content: SEO_URL });
+    upsertMeta('meta[property="og:type"]', { property: "og:type", content: "website" });
     upsertMeta('meta[property="og:image"]', { property: "og:image", content: SEO_IMAGE });
-    upsertMeta('meta[property="og:image:width"]', { property: "og:image:width", content: "1200" });
-    upsertMeta('meta[property="og:image:height"]', { property: "og:image:height", content: "630" });
 
-    // Twitter / X
-    upsertMeta('meta[name="twitter:card"]', { name: "twitter:card", content: "summary_large_image" });
+    // Twitter
+    upsertMeta('meta[name="twitter:card"]', { name: "twitter:card", content: "summary" });
     upsertMeta('meta[name="twitter:title"]', { name: "twitter:title", content: SEO_TITLE });
     upsertMeta('meta[name="twitter:description"]', { name: "twitter:description", content: SEO_DESCRIPTION });
     upsertMeta('meta[name="twitter:image"]', { name: "twitter:image", content: SEO_IMAGE });
+
+    // robots
+    upsertMeta('meta[name="robots"]', { name: "robots", content: "index,follow" });
   }, []);
 
   const principalNumber = useMemo(() => parsePrincipalInt(principalText), [principalText]);
@@ -492,26 +489,28 @@ export default function App() {
           keyboardShouldPersistTaps="handled"
         >
           <View style={[styles.hero, { borderColor: t.border }]}>
-            {/* ✅ Background layer (glow'lar HER ZAMAN arkada) */}
-            <View pointerEvents="none" style={styles.heroBgLayer}>
-              <View
-                pointerEvents="none"
-                style={[
-                  styles.heroGlow,
-                  { backgroundColor: isDark ? "rgba(64,247,178,0.07)" : "rgba(11,143,90,0.10)" },
-                ]}
-              />
-              <View
-                pointerEvents="none"
-                style={[
-                  styles.heroGlow2,
-                  { backgroundColor: isDark ? "rgba(64,247,178,0.04)" : "rgba(11,143,90,0.06)" },
-                ]}
-              />
-            </View>
+            {/* glowlar: arka plan */}
+            <View
+              pointerEvents="none"
+              style={[
+                styles.heroGlow,
+                {
+                  backgroundColor: isDark ? "rgba(64,247,178,0.07)" : "rgba(11,143,90,0.10)",
+                },
+              ]}
+            />
+            <View
+              pointerEvents="none"
+              style={[
+                styles.heroGlow2,
+                {
+                  backgroundColor: isDark ? "rgba(64,247,178,0.04)" : "rgba(11,143,90,0.06)",
+                },
+              ]}
+            />
 
-            {/* ✅ Content layer (yazı/buton/kartlar HER ZAMAN üstte) */}
-            <View style={styles.heroContentLayer}>
+            {/* ✅ içerik katmanı üstte */}
+            <View style={styles.heroContent}>
               <View style={styles.topBar}>
                 <View style={{ flex: 1 }}>
                   <Text style={[styles.brand, { color: t.text }]}>Net Mevduat</Text>
@@ -562,11 +561,7 @@ export default function App() {
                   ]}
                 />
 
-                <Pressable
-                  onPress={onCopy}
-                  disabled={!canCalculate}
-                  style={[styles.copyBtn, { borderColor: t.netBorder }]}
-                >
+                <Pressable onPress={onCopy} disabled={!canCalculate} style={[styles.copyBtn, { borderColor: t.netBorder }]}>
                   <Text style={{ color: canCalculate ? t.accent : t.placeholder, fontWeight: "900" }}>
                     {copied ? "✓" : "⧉"}
                   </Text>
@@ -690,9 +685,7 @@ export default function App() {
                           },
                         ]}
                       >
-                        <Text style={{ color: selectedDays === "custom" ? t.text : t.muted, fontWeight: "900" }}>
-                          Özel
-                        </Text>
+                        <Text style={{ color: selectedDays === "custom" ? t.text : t.muted, fontWeight: "900" }}>Özel</Text>
                       </Pressable>
                     </View>
 
@@ -722,9 +715,7 @@ export default function App() {
                     }}
                     style={[styles.ctaPrimary, { backgroundColor: t.accent, borderColor: t.accentBorder }]}
                   >
-                    <Text style={[styles.ctaPrimaryText, { color: isDark ? "#062217" : "#FFFFFF" }]}>
-                      Hemen Hesapla
-                    </Text>
+                    <Text style={[styles.ctaPrimaryText, { color: isDark ? "#062217" : "#FFFFFF" }]}>Hemen Hesapla</Text>
                   </Pressable>
                 </View>
               </View>
@@ -735,22 +726,20 @@ export default function App() {
           <View style={[styles.seoBlock, { backgroundColor: t.card, borderColor: t.border }]}>
             <Text style={[styles.seoH2, { color: t.text }]}>Vadeli Mevduat Nedir?</Text>
             <Text style={[styles.seoP, { color: t.muted }]}>
-              Vadeli mevduat, bankaya belirli bir süre için yatırılan paranın faiz getirisi elde etmesini sağlayan bir
-              tasarruf ürünüdür. NetMevduat.net üzerinden brüt ve net faiz getirilerinizi stopaj kesintisi dahil
-              hesaplayabilirsiniz.
+              Vadeli mevduat, bankaya belirli bir süre için yatırılan paranın faiz getirisi elde etmesini sağlayan bir tasarruf ürünüdür.
+              NetMevduat.net üzerinden brüt ve net faiz getirilerinizi stopaj kesintisi dahil hesaplayabilirsiniz.
             </Text>
 
             <Text style={[styles.seoH3, { color: t.text }]}>Stopaj Oranları Nasıl Hesaplanır?</Text>
             <Text style={[styles.seoP, { color: t.muted }]}>
-              Türkiye’de vadeli mevduatta stopaj oranı vadeye göre değişebilir. Bu araç, seçtiğiniz vade gününe göre
-              stopajı otomatik uygular ve net kazancı gösterir. Yine de nihai oranlar için resmi kaynakları kontrol
-              etmeniz önerilir.
+              Türkiye’de vadeli mevduatta stopaj oranı vadeye göre değişebilir. Bu araç, seçtiğiniz vade gününe göre stopajı otomatik uygular ve net kazancı gösterir.
+              Yine de nihai oranlar için resmi kaynakları kontrol etmeniz önerilir.
             </Text>
 
             <Text style={[styles.seoH3, { color: t.text }]}>Mevduat Net Getiri Hesaplama</Text>
             <Text style={[styles.seoP, { color: t.muted }]}>
-              Anapara, faiz oranı ve vade gününü girerek brüt getiri, stopaj kesintisi ve net kazancı tek ekranda
-              görebilirsiniz. Piyasa aralığı bölümü ise sadece bilgilendirme amaçlı referans sağlar.
+              Anapara, faiz oranı ve vade gününü girerek brüt getiri, stopaj kesintisi ve net kazancı tek ekranda görebilirsiniz.
+              Piyasa aralığı bölümü ise sadece bilgilendirme amaçlı referans sağlar.
             </Text>
           </View>
 
@@ -765,20 +754,15 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   container: { padding: 18, paddingBottom: 34 },
 
+  // ✅ position relative + zIndex düzeni
   hero: { borderWidth: 1, borderRadius: 22, padding: 14, overflow: "hidden", position: "relative" },
 
-  // ✅ Katman ayrımı: glow (arka) + içerik (üst)
-  heroBgLayer: {
-    ...StyleSheet.absoluteFillObject,
-    zIndex: 0,
-  },
-  heroContentLayer: {
-    position: "relative",
-    zIndex: 1,
-  },
+  // Glowlar arkada kalsın
+  heroGlow: { position: "absolute", width: 420, height: 420, borderRadius: 999, top: -220, left: -180, zIndex: 0 },
+  heroGlow2: { position: "absolute", width: 380, height: 380, borderRadius: 999, bottom: -220, right: -180, zIndex: 0 },
 
-  heroGlow: { position: "absolute", width: 420, height: 420, borderRadius: 999, top: -220, left: -180 },
-  heroGlow2: { position: "absolute", width: 380, height: 380, borderRadius: 999, bottom: -220, right: -180 },
+  // İçerik (başlık + butonlar + kartlar) üstte kalsın
+  heroContent: { position: "relative", zIndex: 1 },
 
   topBar: { flexDirection: "row", justifyContent: "space-between", alignItems: "flex-start", gap: 12 },
   brand: { fontSize: 26, fontWeight: "900" },
