@@ -13,6 +13,7 @@ import {
   Animated,
   Modal,
   LayoutChangeEvent,
+  findNodeHandle,
 } from "react-native";
 
 const MARKET_RANGES_LAST_UPDATED = "26 Şubat 2026";
@@ -250,6 +251,7 @@ export default function App() {
   const t = light;
 
 const scrollRef = useRef<ScrollView>(null as any);
+  const netCardRef = useRef<any>(null);
   const netCardYRef = useRef<number>(0);
   const heroYRef = useRef<number>(0);
 
@@ -438,9 +440,28 @@ const scrollRef = useRef<ScrollView>(null as any);
   };
 
   const scrollToNetCard = () => {
-    const y = (heroYRef.current ?? 0) + (netCardYRef.current ?? 0) - 16;
     requestAnimationFrame(() => {
-      scrollToY(y);
+      const scrollNode = findNodeHandle(scrollRef.current);
+      const card: any = netCardRef.current;
+
+      // En sağlam yöntem: kartın ScrollView içindeki gerçek Y konumunu ölç
+      if (scrollNode && card?.measureLayout) {
+        card.measureLayout(
+          scrollNode,
+          (_x: number, y: number) => {
+            scrollToY(Math.max(0, y - 16));
+          },
+          () => {
+            const yFallback = (heroYRef.current ?? 0) + (netCardYRef.current ?? 0) - 16;
+            scrollToY(Math.max(0, yFallback));
+          }
+        );
+        return;
+      }
+
+      // Fallback: layout verileri
+      const yFallback = (heroYRef.current ?? 0) + (netCardYRef.current ?? 0) - 16;
+      scrollToY(Math.max(0, yFallback));
     });
   };
 
@@ -598,8 +619,7 @@ const scrollRef = useRef<ScrollView>(null as any);
               </Pressable>
             </View>
 
-            <Animated.View
-              onLayout={onNetCardLayout}
+            <Animated.View ref={netCardRef} onLayout={onNetCardLayout}
               style={[
                 styles.netCard,
                 { backgroundColor: t.netBg, borderColor: t.netBorder, transform: [{ scale: pulse }] },
