@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 
     <!-- Title -->
     <title>Net Mevduat – TL Vadeli Mevduat Net Getiri Hesaplama</title>
@@ -18,10 +18,27 @@
     <link rel="canonical" href="https://netmevduat.net/" />
 
     <!-- Robots -->
-    <meta name="robots" content="index, follow" />
+    <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
+
+    <!-- Theme / App -->
+    <meta name="theme-color" content="#0B8F5A" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-title" content="Net Mevduat" />
+
+    <!-- Icons / Manifest -->
+    <link rel="icon" href="/favicon.png" />
+    <link rel="apple-touch-icon" href="/favicon.png" />
+    <!-- Eğer manifest'in yoksa bu satır zararsızdır; varsa çalışır -->
+    <link rel="manifest" href="/manifest.json" />
+
+    <!-- Performance (isteğe bağlı ama faydalı) -->
+    <link rel="preconnect" href="https://www.google-analytics.com" />
+    <link rel="dns-prefetch" href="https://www.google-analytics.com" />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
+    <meta property="og:locale" content="tr_TR" />
+    <meta property="og:site_name" content="Net Mevduat" />
     <meta property="og:title" content="Net Mevduat – TL Vadeli Mevduat Net Getiri Hesaplama" />
     <meta
       property="og:description"
@@ -29,25 +46,63 @@
     />
     <meta property="og:url" content="https://netmevduat.net/" />
     <meta property="og:image" content="https://netmevduat.net/og.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
 
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Net Mevduat – TL Vadeli Mevduat Net Getiri Hesaplama" />
     <meta
       name="twitter:description"
-      content="TL vadeli mevduat net getiri hesaplama aracı."
+      content="TL vadeli mevduat net getiri hesaplama aracı. Stopaj dahil net kazancınızı hızlı ve sade şekilde hesaplayın."
     />
     <meta name="twitter:image" content="https://netmevduat.net/og.png" />
+
+    <!-- Structured Data (JSON-LD) -->
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Net Mevduat",
+        "url": "https://netmevduat.net/",
+        "inLanguage": "tr-TR",
+        "description": "TL vadeli mevduat net getiri hesaplama aracı. Stopaj dahil net kazancı hesaplar ve 32/92/180 gün için piyasa aralığı bilgilendirmesi sunar."
+      }
+    </script>
+
+    <!-- (Opsiyonel) Sitelinks SearchBox istersen:
+    <script type="application/ld+json">
+      {
+        "@context": "https://schema.org",
+        "@type": "WebSite",
+        "name": "Net Mevduat",
+        "url": "https://netmevduat.net/",
+        "potentialAction": {
+          "@type": "SearchAction",
+          "target": "https://netmevduat.net/?q={search_term_string}",
+          "query-input": "required name=search_term_string"
+        }
+      }
+    </script>
+    -->
   </head>
 
   <body>
     <!-- JS kapalıyken Google'ın göreceği içerik -->
     <noscript>
-      <h1>TL Vadeli Mevduat Net Getiri Hesaplama</h1>
-      <p>
-        NetMevduat.net, TL vadeli mevduat hesaplaması yapmanızı sağlar.
-        Stopaj dahil net kazancınızı 32, 92 ve 180 gün için hızlı şekilde hesaplayabilirsiniz.
-      </p>
+      <main>
+        <h1>TL Vadeli Mevduat Net Getiri Hesaplama</h1>
+        <p>
+          NetMevduat.net ile TL vadeli mevduat getirilerinizi stopaj dahil net olarak hesaplayabilirsiniz.
+          Anapara, faiz oranı ve vade gününü girerek brüt getiri, stopaj kesintisi ve net kazancı görüntüleyin.
+        </p>
+        <h2>Öne Çıkanlar</h2>
+        <ul>
+          <li>32 / 92 / 180 gün için hızlı hesaplama</li>
+          <li>Stopaj oranı vadeye göre otomatik uygulanır</li>
+          <li>Piyasa aralığı bilgilendirmesi (referans)</li>
+        </ul>
+      </main>
     </noscript>
 
     <div id="root"></div>
