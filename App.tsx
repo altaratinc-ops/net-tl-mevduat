@@ -13,7 +13,6 @@ import {
   Animated,
   Modal,
   LayoutChangeEvent,
-  findNodeHandle,
 } from "react-native";
 
 const MARKET_RANGES_LAST_UPDATED = "26 Şubat 2026";
@@ -251,7 +250,6 @@ export default function App() {
   const t = light;
 
 const scrollRef = useRef<ScrollView>(null as any);
-  const netCardRef = useRef<any>(null);
   const netCardYRef = useRef<number>(0);
   const heroYRef = useRef<number>(0);
 
@@ -419,49 +417,63 @@ const scrollRef = useRef<ScrollView>(null as any);
 
   const scrollToY = (y: number) => {
     const targetY = Math.max(0, Math.floor(y));
+    const anyRef: any = scrollRef.current as any;
 
-    requestAnimationFrame(() => {
-      // ✅ RN ScrollView kendi içinde scroll eder (özellikle web'de window.scrollTo çalışmayabilir)
-      const anyRef: any = scrollRef.current as any;
-      if (anyRef?.scrollTo) {
-        anyRef.scrollTo({ y: targetY, animated: true });
+    if (anyRef?.scrollTo) {
+      anyRef.scrollTo({ y: targetY, animated: true });
+      return;
+    }
+    if (anyRef?.getScrollResponder) {
+      try {
+        anyRef.getScrollResponder()?.scrollTo?.({ y: targetY, animated: true });
         return;
-      }
+      } catch {}
+    }
 
-      // Fallback (çok nadir)
-      if (typeof window !== "undefined") {
-        try {
-          window.scrollTo({ top: targetY, behavior: "smooth" } as any);
-        } catch {
-          window.scrollTo(0, targetY);
-        }
+    // Web fallback (scroll the page)
+    if (typeof window !== "undefined" && (window as any)?.scrollTo) {
+      try {
+        (window as any).scrollTo({ top: targetY, behavior: "smooth" });
+      } catch {
+        (window as any).scrollTo(0, targetY);
       }
-    });
+    }
   };
 
   const scrollToNetCard = () => {
-    requestAnimationFrame(() => {
-      const scrollNode = findNodeHandle(scrollRef.current);
-      const card: any = netCardRef.current;
+    // ✅ En stabil yöntem: onLayout ile aldığımız Y'ye scroll
+    // (RN Web dahil) bazen ilk denemede state/render yüzünden kaçırabiliyor,
+    // bu yüzden 2 frame + küçük timeout ile garanti ediyoruz.
+    const calcY = () => Math.max(0, (heroYRef.current ?? 0) + (netCardYRef.current ?? 0) - 16);
 
-      // En sağlam yöntem: kartın ScrollView içindeki gerçek Y konumunu ölç
-      if (scrollNode && card?.measureLayout) {
-        card.measureLayout(
-          scrollNode,
-          (_x: number, y: number) => {
-            scrollToY(Math.max(0, y - 16));
-          },
-          () => {
-            const yFallback = (heroYRef.current ?? 0) + (netCardYRef.current ?? 0) - 16;
-            scrollToY(Math.max(0, yFallback));
-          }
-        );
-        return;
+    const doScroll = () => {
+      const y = calcY();
+      const anyRef: any = scrollRef.current as any;
+
+      if (anyRef?.scrollTo) {
+        anyRef.scrollTo({ y, animated: true });
+      } else if (anyRef?.getScrollResponder) {
+        try {
+          anyRef.getScrollResponder()?.scrollTo?.({ y, animated: true });
+        } catch {}
       }
 
-      // Fallback: layout verileri
-      const yFallback = (heroYRef.current ?? 0) + (netCardYRef.current ?? 0) - 16;
-      scrollToY(Math.max(0, yFallback));
+      // Web fallback (sayfa scroll)
+      if (typeof window !== "undefined" && (window as any)?.scrollTo) {
+        try {
+          (window as any).scrollTo({ top: y, behavior: "smooth" });
+        } catch {
+          (window as any).scrollTo(0, y);
+        }
+      }
+    };
+
+    requestAnimationFrame(() => {
+      doScroll();
+      requestAnimationFrame(() => {
+        doScroll();
+        setTimeout(doScroll, 60);
+      });
     });
   };
 
@@ -619,7 +631,8 @@ const scrollRef = useRef<ScrollView>(null as any);
               </Pressable>
             </View>
 
-            <Animated.View ref={netCardRef} onLayout={onNetCardLayout}
+            <Animated.View
+              onLayout={onNetCardLayout}
               style={[
                 styles.netCard,
                 { backgroundColor: t.netBg, borderColor: t.netBorder, transform: [{ scale: pulse }] },
