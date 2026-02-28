@@ -246,11 +246,10 @@ function SlidePanelModal(props: {
 }
 
 export default function App() {
-  const [theme, setTheme] = useState<"dark" | "light">("dark");
-  const isDark = theme === "dark";
-  const t = isDark ? dark : light;
+  // ✅ Sadece light tema (dark kaldırıldı)
+  const t = light;
 
-  const scrollRef = useRef<ScrollView | null>(null);
+const scrollRef = useRef<ScrollView>(null as any);
   const netCardYRef = useRef<number>(0);
   const heroYRef = useRef<number>(0);
 
@@ -262,17 +261,27 @@ export default function App() {
 
   const [marketOpen, setMarketOpen] = useState(false);
   const [tcmbOpen, setTcmbOpen] = useState(false);
+  const [stopajOpen, setStopajOpen] = useState(false);
+
 
   const openMarket = () => {
     setTcmbOpen(false);
     setMarketOpen(true);
   };
+  const openStopaj = () => {
+    setMarketOpen(false);
+    setTcmbOpen(false);
+    setStopajOpen(true);
+  };
+
   const openTcmb = () => {
     setMarketOpen(false);
+    setStopajOpen(false);
     setTcmbOpen(true);
   };
   const closeAll = () => {
     setMarketOpen(false);
+    setStopajOpen(false);
     setTcmbOpen(false);
   };
 
@@ -345,11 +354,10 @@ export default function App() {
 
   // pulse
   const pulse = useRef(new Animated.Value(1)).current;
-  const pulseKey = useMemo(() => `${principalText}|${rateText}|${effectiveDays}|${theme}`, [
+  const pulseKey = useMemo(() => `${principalText}|${rateText}|${effectiveDays}`, [
     principalText,
     rateText,
     effectiveDays,
-    theme,
   ]);
 
   useEffect(() => {
@@ -399,18 +407,43 @@ export default function App() {
     return `📌 Seçili vade: ${effectiveDays} gün → Piyasa bant: %${range.min}–%${range.max}`;
   }, [marketBucket, range, effectiveDays]);
 
-    const onHeroLayout = (e: LayoutChangeEvent) => {
+  const onHeroLayout = (e: LayoutChangeEvent) => {
     heroYRef.current = e.nativeEvent.layout.y;
   };
 
-const onNetCardLayout = (e: LayoutChangeEvent) => {
+  const onNetCardLayout = (e: LayoutChangeEvent) => {
     netCardYRef.current = e.nativeEvent.layout.y;
   };
 
+  const scrollToY = (y: number) => {
+    const targetY = Math.max(0, Math.floor(y));
+    const anyRef: any = scrollRef.current as any;
+
+    if (anyRef?.scrollTo) {
+      anyRef.scrollTo({ y: targetY, animated: true });
+      return;
+    }
+    if (anyRef?.getScrollResponder) {
+      try {
+        anyRef.getScrollResponder()?.scrollTo?.({ y: targetY, animated: true });
+        return;
+      } catch {}
+    }
+
+    // Web fallback (scroll the page)
+    if (typeof window !== "undefined" && (window as any)?.scrollTo) {
+      try {
+        (window as any).scrollTo({ top: targetY, behavior: "smooth" });
+      } catch {
+        (window as any).scrollTo(0, targetY);
+      }
+    }
+  };
+
   const scrollToNetCard = () => {
-    const y = Math.max(0, (heroYRef.current ?? 0) + (netCardYRef.current ?? 0) - 16);
+    const y = (heroYRef.current ?? 0) + (netCardYRef.current ?? 0) - 16;
     requestAnimationFrame(() => {
-      scrollRef.current?.scrollTo({ y, animated: true });
+      scrollToY(y);
     });
   };
 
@@ -461,7 +494,31 @@ const onNetCardLayout = (e: LayoutChangeEvent) => {
         </Text>
       </SlidePanelModal>
 
-      {/* TCMB Modal */}
+            {/* Stopaj Modal */}
+      <SlidePanelModal
+        visible={stopajOpen}
+        onClose={closeAll}
+        title="Stopaj Oranları"
+        subtitle="TL vadeli mevduat için (bilgilendirme)"
+        theme={t}
+      >
+        <View style={[styles.tcmbBox, { borderColor: t.border, backgroundColor: t.bgSoft }]}>
+          <Text style={[styles.micro, { color: t.muted }]}>
+            ≤ 180 gün: <Text style={{ color: t.text, fontWeight: "900" }}>%{STOPAJ_TL_UP_TO_6M}</Text>
+          </Text>
+          <Text style={[styles.micro, { color: t.muted, marginTop: 6 }]}>
+            181–365 gün: <Text style={{ color: t.text, fontWeight: "900" }}>%{STOPAJ_TL_UP_TO_1Y}</Text>
+          </Text>
+          <Text style={[styles.micro, { color: t.muted, marginTop: 6 }]}>
+            365+ gün: <Text style={{ color: t.text, fontWeight: "900" }}>%{STOPAJ_TL_OVER_1Y}</Text>
+          </Text>
+        </View>
+        <Text style={[styles.micro, { color: t.muted, marginTop: 10 }]}>
+          Not: Stopaj oranları zaman içinde değişebilir. Bu ekran bilgilendirme amaçlıdır.
+        </Text>
+      </SlidePanelModal>
+
+{/* TCMB Modal */}
       <SlidePanelModal
         visible={tcmbOpen}
         onClose={closeAll}
@@ -489,7 +546,7 @@ const onNetCardLayout = (e: LayoutChangeEvent) => {
 
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === "ios" ? "padding" : undefined}>
         <ScrollView
-          ref={(r) => (scrollRef.current = r)}
+          ref={scrollRef}
           contentContainerStyle={[styles.container, { backgroundColor: t.bg }]}
           keyboardShouldPersistTaps="handled"
         >
@@ -500,7 +557,7 @@ const onNetCardLayout = (e: LayoutChangeEvent) => {
               style={[
                 styles.heroGlow,
                 {
-                  backgroundColor: isDark ? "rgba(64,247,178,0.07)" : "rgba(11,143,90,0.10)",
+                  backgroundColor: "rgba(11,143,90,0.10)",
                 },
               ]}
             />
@@ -509,7 +566,7 @@ const onNetCardLayout = (e: LayoutChangeEvent) => {
               style={[
                 styles.heroGlow2,
                 {
-                  backgroundColor: isDark ? "rgba(64,247,178,0.04)" : "rgba(11,143,90,0.06)",
+                  backgroundColor: "rgba(11,143,90,0.06)",
                 },
               ]}
             />
@@ -518,15 +575,7 @@ const onNetCardLayout = (e: LayoutChangeEvent) => {
               <View style={{ flex: 1 }}>
                 <Text style={[styles.brand, { color: t.text }]}>Net Mevduat</Text>
                 <Text style={[styles.tagline, { color: t.muted }]}>TL vadeli mevduat net getiri hesaplama</Text>
-              </View>
-
-              <Pressable
-                onPress={() => setTheme((p) => (p === "dark" ? "light" : "dark"))}
-                style={[styles.themeBtn, { backgroundColor: t.card, borderColor: t.border }]}
-              >
-                <Text style={{ color: t.text, fontWeight: "900" }}>{isDark ? "🌙" : "☀️"}</Text>
-              </Pressable>
-            </View>
+              </View></View>
 
             {/* Üst menü: Piyasa + Faiz Kararı */}
             <View style={[styles.menuRow, { borderColor: t.border }]}>
@@ -535,6 +584,13 @@ const onNetCardLayout = (e: LayoutChangeEvent) => {
                 style={[styles.menuBtn, { backgroundColor: t.menuBg, borderColor: t.border }]}
               >
                 <Text style={[styles.menuText, { color: t.text }]}>Piyasa</Text>
+              </Pressable>
+
+              <Pressable
+                onPress={() => (stopajOpen ? closeAll() : openStopaj())}
+                style={[styles.menuBtn, { backgroundColor: t.menuBg, borderColor: t.border }]}
+              >
+                <Text style={[styles.menuText, { color: t.text }]}>Stopaj</Text>
               </Pressable>
 
               <Pressable
@@ -559,7 +615,7 @@ const onNetCardLayout = (e: LayoutChangeEvent) => {
                   {
                     borderRadius: 20,
                     opacity: flashOpacity,
-                    backgroundColor: isDark ? "rgba(64,247,178,0.10)" : "rgba(11,143,90,0.10)",
+                    backgroundColor: "rgba(11,143,90,0.10)",
                   },
                 ]}
               />
@@ -718,7 +774,7 @@ const onNetCardLayout = (e: LayoutChangeEvent) => {
                   }}
                   style={[styles.ctaPrimary, { backgroundColor: t.accent, borderColor: t.accentBorder }]}
                 >
-                  <Text style={[styles.ctaPrimaryText, { color: isDark ? "#062217" : "#FFFFFF" }]}>Hemen Hesapla</Text>
+                  <Text style={[styles.ctaPrimaryText, { color: "#FFFFFF" }]}>Hemen Hesapla</Text>
                 </Pressable>
               </View>
             </View>
@@ -873,32 +929,6 @@ const styles = StyleSheet.create({
   modalCloseBtn: { width: 36, height: 36, borderRadius: 12, borderWidth: 1, alignItems: "center", justifyContent: "center" },
   tcmbBox: { borderWidth: 1, borderRadius: 14, padding: 12 },
 });
-
-const dark = {
-  bg: "#070A12",
-  bgSoft: "#0B1020",
-  card: "#0B1020",
-  text: "#EAF0FF",
-  muted: "#A6B0CC",
-  placeholder: "#66709A",
-  border: "#1B2442",
-  inputBg: "#0E1630",
-
-  accent: "#40F7B2",
-  accentBorder: "#1E6A56",
-
-  netBg: "#071B14",
-  netBorder: "#154A3B",
-  metaBg: "rgba(64,247,178,0.06)",
-
-  rangeBg: "#0B1020",
-  rangeActiveBg: "rgba(64,247,178,0.08)",
-
-  pillBg: "#0B1020",
-  pillActiveBg: "rgba(234,240,255,0.05)",
-
-  menuBg: "rgba(255,255,255,0.03)",
-};
 
 const light = {
   bg: "#F7F8FB",
