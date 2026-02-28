@@ -417,27 +417,24 @@ const scrollRef = useRef<ScrollView>(null as any);
 
   const scrollToY = (y: number) => {
     const targetY = Math.max(0, Math.floor(y));
-    const anyRef: any = scrollRef.current as any;
 
-    if (anyRef?.scrollTo) {
-      anyRef.scrollTo({ y: targetY, animated: true });
-      return;
-    }
-    if (anyRef?.getScrollResponder) {
-      try {
-        anyRef.getScrollResponder()?.scrollTo?.({ y: targetY, animated: true });
+    requestAnimationFrame(() => {
+      // ✅ RN ScrollView kendi içinde scroll eder (özellikle web'de window.scrollTo çalışmayabilir)
+      const anyRef: any = scrollRef.current as any;
+      if (anyRef?.scrollTo) {
+        anyRef.scrollTo({ y: targetY, animated: true });
         return;
-      } catch {}
-    }
-
-    // Web fallback (scroll the page)
-    if (typeof window !== "undefined" && (window as any)?.scrollTo) {
-      try {
-        (window as any).scrollTo({ top: targetY, behavior: "smooth" });
-      } catch {
-        (window as any).scrollTo(0, targetY);
       }
-    }
+
+      // Fallback (çok nadir)
+      if (typeof window !== "undefined") {
+        try {
+          window.scrollTo({ top: targetY, behavior: "smooth" } as any);
+        } catch {
+          window.scrollTo(0, targetY);
+        }
+      }
+    });
   };
 
   const scrollToNetCard = () => {
