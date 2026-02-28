@@ -488,29 +488,26 @@ export default function App() {
           contentContainerStyle={[styles.container, { backgroundColor: t.bg }]}
           keyboardShouldPersistTaps="handled"
         >
+          {/* HERO (glow arkada, header önde) */}
           <View style={[styles.hero, { borderColor: t.border }]}>
             {/* glowlar: arka plan */}
             <View
               pointerEvents="none"
               style={[
                 styles.heroGlow,
-                {
-                  backgroundColor: isDark ? "rgba(64,247,178,0.07)" : "rgba(11,143,90,0.10)",
-                },
+                { backgroundColor: isDark ? "rgba(64,247,178,0.07)" : "rgba(11,143,90,0.10)" },
               ]}
             />
             <View
               pointerEvents="none"
               style={[
                 styles.heroGlow2,
-                {
-                  backgroundColor: isDark ? "rgba(64,247,178,0.04)" : "rgba(11,143,90,0.06)",
-                },
+                { backgroundColor: isDark ? "rgba(64,247,178,0.04)" : "rgba(11,143,90,0.06)" },
               ]}
             />
 
-                        <View style={[styles.headerShield, { backgroundColor: t.bg }]}>
-<View style={styles.topBar}>
+            {/* HEADER (shield yok) */}
+            <View style={styles.topBar}>
               <View style={{ flex: 1 }}>
                 <Text style={[styles.brand, { color: t.text }]}>Net Mevduat</Text>
                 <Text style={[styles.tagline, { color: t.muted }]}>TL vadeli mevduat net getiri hesaplama</Text>
@@ -540,9 +537,8 @@ export default function App() {
                 <Text style={[styles.menuText, { color: t.text }]}>Faiz Kararı</Text>
               </Pressable>
             </View>
-            </View>
 
-
+            {/* NET CARD */}
             <Animated.View
               onLayout={onNetCardLayout}
               style={[
@@ -756,17 +752,32 @@ const styles = StyleSheet.create({
   safe: { flex: 1 },
   container: { padding: 18, paddingBottom: 34 },
 
-  // ✅ FIX: stacking context
+  // ✅ stacking context
   hero: { borderWidth: 1, borderRadius: 22, padding: 14, overflow: "hidden", position: "relative" },
 
-  // ✅ FIX: glow her zaman arkada
-  heroGlow: { position: "absolute", width: 420, height: 420, borderRadius: 999, top: -220, left: -180, zIndex: 0 },
-  heroGlow2: { position: "absolute", width: 380, height: 380, borderRadius: 999, bottom: -220, right: -180, zIndex: 0 },
+  // ✅ glow arkada (ama görünür)
+  heroGlow: {
+    position: "absolute",
+    width: 420,
+    height: 420,
+    borderRadius: 999,
+    top: -220,
+    left: -180,
+    zIndex: 0,
+    ...(Platform.OS === "android" ? { elevation: 0 } : null),
+  },
+  heroGlow2: {
+    position: "absolute",
+    width: 380,
+    height: 380,
+    borderRadius: 999,
+    bottom: -220,
+    right: -180,
+    zIndex: 0,
+    ...(Platform.OS === "android" ? { elevation: 0 } : null),
+  },
 
-  // ✅ FIX: header bölgesi glow görünmesin
-  headerShield: { borderRadius: 18, paddingBottom: 10 },
-
-  // ✅ FIX: içerik her zaman üstte
+  // ✅ header hep glow’un üstünde
   topBar: {
     flexDirection: "row",
     justifyContent: "space-between",
@@ -774,6 +785,7 @@ const styles = StyleSheet.create({
     gap: 12,
     position: "relative",
     zIndex: 2,
+    ...(Platform.OS === "android" ? { elevation: 2 } : null),
   },
 
   brand: { fontSize: 26, fontWeight: "900" },
@@ -781,12 +793,20 @@ const styles = StyleSheet.create({
 
   themeBtn: { width: 44, height: 44, borderRadius: 14, borderWidth: 1, alignItems: "center", justifyContent: "center" },
 
-  // ✅ FIX
-  menuRow: { marginTop: 8, flexDirection: "row", gap: 8, borderTopWidth: 1, paddingTop: 12, position: "relative", zIndex: 2 },
+  // ✅ Piyasa/Faiz butonları header gibi önde
+  menuRow: {
+    marginTop: 8,
+    flexDirection: "row",
+    gap: 8,
+    borderTopWidth: 1,
+    paddingTop: 12,
+    position: "relative",
+    zIndex: 2,
+    ...(Platform.OS === "android" ? { elevation: 2 } : null),
+  },
   menuBtn: { flex: 1, borderWidth: 1, borderRadius: 14, paddingVertical: 10, alignItems: "center", justifyContent: "center" },
   menuText: { fontSize: 12, fontWeight: "900" },
 
-  // ✅ FIX
   netCard: {
     marginTop: 14,
     borderRadius: 20,
@@ -795,8 +815,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 14,
     alignItems: "center",
     position: "relative",
-    zIndex: 2,
-    ...(Platform.OS === "android" ? { elevation: 2 } : null),
   },
   netTitle: { fontSize: 12, fontWeight: "900" },
   netValue: { fontSize: 42, fontWeight: "900", marginTop: 6 },
@@ -830,16 +848,14 @@ const styles = StyleSheet.create({
   miniInfoText: { flex: 1, fontSize: 11, fontWeight: "800", lineHeight: 16 },
   miniInfoBtn: { borderWidth: 1, borderRadius: 12, paddingHorizontal: 10, paddingVertical: 7 },
 
-  // ✅ FIX
-  compactDetail: { marginTop: 12, borderRadius: 18, borderWidth: 1, padding: 12, position: "relative", zIndex: 2 },
+  compactDetail: { marginTop: 12, borderRadius: 18, borderWidth: 1, padding: 12 },
   compactRow: { flexDirection: "row", alignItems: "center" },
   compactItem: { flex: 1, alignItems: "center" },
   compactLabel: { fontSize: 11, fontWeight: "900" },
   compactValue: { marginTop: 4, fontSize: 13, fontWeight: "900" },
   compactDivider: { width: 1, height: 34, marginHorizontal: 8 },
 
-  // ✅ FIX
-  heroInputs: { marginTop: 12, borderRadius: 20, borderWidth: 1, padding: 14, position: "relative", zIndex: 2 },
+  heroInputs: { marginTop: 12, borderRadius: 20, borderWidth: 1, padding: 14 },
 
   label: { fontSize: 12, fontWeight: "900", marginBottom: 6, marginTop: 6 },
   input: { borderWidth: 1, borderRadius: 14, paddingHorizontal: 12, paddingVertical: 11, fontSize: 16, fontWeight: "800" },
