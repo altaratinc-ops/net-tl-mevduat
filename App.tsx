@@ -558,8 +558,8 @@ export default function App() {
                 </Pressable>
               </View>
 
+              <View onLayout={onNetCardLayout} collapsable={false}>
               <Animated.View
-                onLayout={onNetCardLayout}
                 style={[
                   styles.netCard,
                   { backgroundColor: t.netBg, borderColor: t.netBorder, transform: [{ scale: pulse }] },
@@ -610,6 +610,7 @@ export default function App() {
                   Bilgilendirme amaçlıdır. Sonuçlar girdiğiniz faiz oranına göre hesaplanır.
                 </Text>
               </Animated.View>
+            </View>
 
               {/* Küçük Detay */}
               <View style={[styles.compactDetail, { backgroundColor: t.card, borderColor: t.border }]}>
