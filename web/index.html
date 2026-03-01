@@ -1,22 +1,29 @@
 <!DOCTYPE html>
 <html lang="tr">
   <head>
+    <!-- Charset & Viewport -->
     <meta charset="utf-8" />
-    <meta httpEquiv="X-UA-Compatible" content="IE=edge" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
 
+    <!-- Title -->
     <title>Net Mevduat – TL Vadeli Mevduat Net Getiri Hesaplama</title>
+
+    <!-- Meta Description -->
     <meta
       name="description"
-      content="TL vadeli mevduat net getiri hesaplama aracı. Stopaj dahil net kazancınızı hızlı ve sade şekilde hesaplayın. 32/92/180 gün için bilgilendirme içerir."
+      content="TL vadeli mevduat net getiri hesaplama aracı. Stopaj dahil net kazancınızı hızlı ve sade şekilde hesaplayın. 32, 92 ve 180 gün için bilgilendirme içerir."
     />
 
+    <!-- Robots -->
     <meta name="robots" content="index,follow" />
+
+    <!-- Canonical -->
     <link rel="canonical" href="https://netmevduat.net/" />
 
-    <!-- Open Graph (WhatsApp/Telegram/Discord vb.) -->
+    <!-- Open Graph -->
     <meta property="og:type" content="website" />
-    <meta property="og:site_name" content="netmevduat.net" />
+    <meta property="og:site_name" content="NetMevduat" />
     <meta property="og:url" content="https://netmevduat.net/" />
     <meta property="og:title" content="Net Mevduat – TL Vadeli Mevduat Net Getiri Hesaplama" />
     <meta
@@ -27,13 +34,73 @@
     <meta property="og:image:width" content="1200" />
     <meta property="og:image:height" content="630" />
 
-    <!-- Twitter / X -->
+    <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Net Mevduat – TL Vadeli Mevduat Hesaplama" />
     <meta name="twitter:description" content="Net mevduat getirinizi anında hesaplayın." />
     <meta name="twitter:image" content="https://netmevduat.net/og.png" />
 
-    <!-- Expo reset (senin template’de vardı, aynen kalsın) -->
+    <!-- WebApplication Schema -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "WebApplication",
+      "name": "Net Mevduat – TL Vadeli Mevduat Net Getiri Hesaplama",
+      "url": "https://netmevduat.net/",
+      "description": "TL vadeli mevduat net getiri hesaplama aracı. Stopaj dahil net kazancınızı hesaplayın.",
+      "applicationCategory": "FinanceApplication",
+      "operatingSystem": "All",
+      "publisher": {
+        "@type": "Organization",
+        "name": "NetMevduat",
+        "url": "https://netmevduat.net/"
+      }
+    }
+    </script>
+
+    <!-- FAQ Schema -->
+    <script type="application/ld+json">
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Vadeli mevduat nedir?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Vadeli mevduat, bankaya belirli bir süre için yatırılan paranın faiz getirisi elde etmesini sağlayan bir tasarruf ürünüdür. Vade sonunda anapara ve faiz birlikte geri alınır."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Mevduat net getiri nasıl hesaplanır?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Net getiri hesaplanırken brüt faiz tutarından stopaj kesintisi düşülür. Bu araç, girilen anapara, faiz oranı ve vade gününe göre stopaj dahil net kazancı otomatik hesaplar."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Stopaj oranı kaçtır?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "TL vadeli mevduatta stopaj oranı vadeye göre değişir. 180 güne kadar, 1 yıla kadar ve 1 yıl üzeri için farklı oranlar uygulanabilir."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "32 günlük mevduat ne kadar kazandırır?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Kazanç; anapara tutarı ve faiz oranına göre değişir. NetMevduat.net üzerinden 32 günlük vade için stopaj dahil net kazancınızı anında hesaplayabilirsiniz."
+          }
+        }
+      ]
+    }
+    </script>
+
+    <!-- Expo reset -->
     <style id="expo-reset">
       html,
       body {
@@ -53,7 +120,14 @@
   </head>
 
   <body>
-    <noscript>You need to enable JavaScript to run this app.</noscript>
+    <noscript>
+      <h1>TL Vadeli Mevduat Net Getiri Hesaplama</h1>
+      <p>
+        NetMevduat.net üzerinden TL vadeli mevduat net getirinizi stopaj dahil hesaplayabilirsiniz.
+        32, 92 ve 180 gün için hızlı ve sade hesaplama yapın.
+      </p>
+    </noscript>
+
     <div id="root"></div>
   </body>
 </html>
