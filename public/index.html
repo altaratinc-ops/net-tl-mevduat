@@ -5,45 +5,23 @@
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
 
-    <!-- Title -->
     <title>Net Mevduat – TL Vadeli Mevduat Net Getiri Hesaplama</title>
 
-    <!-- Meta Description -->
-    <meta
-      name="description"
-      content="TL vadeli mevduat net getiri hesaplama aracı. Stopaj dahil net kazancınızı hızlı ve sade şekilde hesaplayın. 32/92/180 gün için piyasa aralığı bilgilendirmesi içerir."
-    />
+    <meta name="description"
+      content="TL vadeli mevduat net getiri hesaplama aracı. Stopaj dahil net kazancınızı hızlı ve sade şekilde hesaplayın. 32/92/180 gün için piyasa aralığı bilgilendirmesi içerir." />
 
-    <!-- Canonical -->
     <link rel="canonical" href="https://netmevduat.net/" />
 
-    <!-- Robots -->
     <meta name="robots" content="index, follow, max-image-preview:large, max-snippet:-1, max-video-preview:-1" />
-
-    <!-- Theme / App -->
     <meta name="theme-color" content="#0B8F5A" />
-    <meta name="apple-mobile-web-app-capable" content="yes" />
-    <meta name="apple-mobile-web-app-title" content="Net Mevduat" />
-
-    <!-- Icons / Manifest -->
-    <link rel="icon" href="/favicon.png" />
-    <link rel="apple-touch-icon" href="/favicon.png" />
-    <!-- Eğer manifest'in yoksa bu satır zararsızdır; varsa çalışır -->
-    <link rel="manifest" href="/manifest.json" />
-
-    <!-- Performance (isteğe bağlı ama faydalı) -->
-    <link rel="preconnect" href="https://www.google-analytics.com" />
-    <link rel="dns-prefetch" href="https://www.google-analytics.com" />
 
     <!-- Open Graph -->
     <meta property="og:type" content="website" />
     <meta property="og:locale" content="tr_TR" />
     <meta property="og:site_name" content="Net Mevduat" />
     <meta property="og:title" content="Net Mevduat – TL Vadeli Mevduat Net Getiri Hesaplama" />
-    <meta
-      property="og:description"
-      content="TL vadeli mevduat net getiri hesaplama aracı. Stopaj dahil net kazancınızı hızlı ve sade şekilde hesaplayın."
-    />
+    <meta property="og:description"
+      content="TL vadeli mevduat net getiri hesaplama aracı. Stopaj dahil net kazancınızı hızlı ve sade şekilde hesaplayın." />
     <meta property="og:url" content="https://netmevduat.net/" />
     <meta property="og:image" content="https://netmevduat.net/og.png" />
     <meta property="og:image:width" content="1200" />
@@ -52,156 +30,122 @@
     <!-- Twitter -->
     <meta name="twitter:card" content="summary_large_image" />
     <meta name="twitter:title" content="Net Mevduat – TL Vadeli Mevduat Net Getiri Hesaplama" />
-    <meta
-      name="twitter:description"
-      content="TL vadeli mevduat net getiri hesaplama aracı. Stopaj dahil net kazancınızı hızlı ve sade şekilde hesaplayın."
-    />
+    <meta name="twitter:description"
+      content="TL vadeli mevduat net getiri hesaplama aracı." />
     <meta name="twitter:image" content="https://netmevduat.net/og.png" />
 
-    <!-- Structured Data (JSON-LD) -->
+    <!-- WebSite Schema -->
     <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "WebSite",
-        "name": "Net Mevduat",
-        "url": "https://netmevduat.net/",
-        "inLanguage": "tr-TR",
-        "description": "TL vadeli mevduat net getiri hesaplama aracı. Stopaj dahil net kazancı hesaplar ve 32/92/180 gün için piyasa aralığı bilgilendirmesi sunar."
-      }
+    {
+      "@context": "https://schema.org",
+      "@type": "WebSite",
+      "name": "Net Mevduat",
+      "url": "https://netmevduat.net/",
+      "inLanguage": "tr-TR",
+      "description": "TL vadeli mevduat net getiri hesaplama aracı."
+    }
     </script>
 
-    <!-- (Opsiyonel) Sitelinks SearchBox istersen:
+    <!-- FAQ Schema -->
     <script type="application/ld+json">
-      {
-        "@context": "https://schema.org",
-        "@type": "WebSite",
-        "name": "Net Mevduat",
-        "url": "https://netmevduat.net/",
-        "potentialAction": {
-          "@type": "SearchAction",
-          "target": "https://netmevduat.net/?q={search_term_string}",
-          "query-input": "required name=search_term_string"
+    {
+      "@context": "https://schema.org",
+      "@type": "FAQPage",
+      "mainEntity": [
+        {
+          "@type": "Question",
+          "name": "Vadeli mevduat net getiri nasıl hesaplanır?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Net getiri, brüt faiz tutarından stopaj kesintisi düşülerek hesaplanır. Formül: Anapara x Faiz x (Vade/365) ve ardından stopaj oranı çıkarılır."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "32 günlük mevduat mı 92 günlük mevduat mı daha avantajlı?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "Avantaj bankanın sunduğu faiz oranına ve stopaj oranına bağlıdır. Kısa vadede esneklik, uzun vadede stopaj avantajı olabilir."
+          }
+        },
+        {
+          "@type": "Question",
+          "name": "Stopaj oranı kaçtır?",
+          "acceptedAnswer": {
+            "@type": "Answer",
+            "text": "TL vadeli mevduatta stopaj oranı vadeye göre değişebilir. 180 güne kadar %17,5; 181-365 gün arası %15; 1 yıl üzeri %10 uygulanabilir."
+          }
         }
-      }
+      ]
+    }
     </script>
-    -->
+
+    <style id="expo-reset">
+      html, body { height: 100%; }
+      body { overflow: hidden; }
+      #root { display: flex; height: 100%; flex: 1; }
+    </style>
+
+    <link rel="icon" href="/favicon.png" />
   </head>
 
   <body>
-    <!-- JS kapalıyken Google'ın göreceği içerik -->
-    <noscript>
-      <main>
-        <h1>TL Vadeli Mevduat Net Getiri Hesaplama</h1>
-        <p>
-          NetMevduat.net ile TL vadeli mevduat getirilerinizi stopaj dahil net olarak hesaplayabilirsiniz.
-          Anapara, faiz oranı ve vade gününü girerek brüt getiri, stopaj kesintisi ve net kazancı görüntüleyin.
-        </p>
-        <h2>Öne Çıkanlar</h2>
-        <ul>
-          <li>32 / 92 / 180 gün için hızlı hesaplama</li>
-          <li>Stopaj oranı vadeye göre otomatik uygulanır</li>
-          <li>Piyasa aralığı bilgilendirmesi (referans)</li>
-        </ul>
-      </main>
-    </noscript>
+
+    <!-- SEO içerik (Google için görünür, kullanıcı için gizli) -->
     <section style="display:none">
-  <h1>TL Vadeli Mevduat Net Getiri Hesaplama 2026</h1>
 
-  <p>
-    Net Mevduat, TL vadeli mevduat net getiri hesaplama işlemini hızlı ve doğru şekilde yapmanızı sağlar.
-    Anapara, faiz oranı ve vade gününü girerek brüt getiri, stopaj kesintisi ve net kazancı anında görebilirsiniz.
-    Türkiye’de bankaların sunduğu mevduat faiz oranları değişkenlik gösterebilir.
-    Bu nedenle yatırım yapmadan önce net kazancınızı hesaplamak büyük önem taşır.
-  </p>
+      <h1>TL Vadeli Mevduat Net Getiri Hesaplama 2026</h1>
 
-  <h2>Vadeli Mevduat Nedir?</h2>
-  <p>
-    Vadeli mevduat, bankaya belirli bir süre için yatırılan paranın faiz getirisi elde etmesini sağlayan
-    bir tasarruf ürünüdür. Türkiye’de en çok tercih edilen yatırım araçlarından biridir.
-    Özellikle faiz oranlarının yüksek olduğu dönemlerde yatırımcılar TL vadeli mevduata yönelir.
-  </p>
+      <p>
+        Net Mevduat, Türkiye’de TL vadeli mevduat net getiri hesaplama işlemini kolaylaştıran
+        ücretsiz bir finans aracıdır. Yatırımcılar anapara, faiz oranı ve vade süresini girerek
+        saniyeler içinde brüt kazanç, stopaj kesintisi ve net getiri tutarını öğrenebilir.
+      </p>
 
-  <h2>Mevduat Faizi Nasıl Hesaplanır?</h2>
-  <p>
-    Mevduat faizi hesaplanırken anapara, yıllık faiz oranı ve vade süresi dikkate alınır.
-    Formül genel olarak şu şekildedir:
-  </p>
+      <h2>Vadeli Mevduat Nedir?</h2>
+      <p>
+        Vadeli mevduat, bankaya belirli bir süre için yatırılan paranın faiz getirisi
+        elde etmesini sağlayan düşük riskli yatırım aracıdır. Türkiye’de en çok tercih edilen
+        yatırım yöntemlerinden biridir.
+      </p>
 
-  <p>
-    Brüt Getiri = Anapara × Faiz Oranı × (Vade / 365)
-  </p>
+      <h2>Mevduat Hesaplama Formülü</h2>
+      <p>
+        Brüt Getiri = Anapara × Faiz Oranı × (Vade / 365)
+      </p>
+      <p>
+        Net Getiri = Brüt Getiri − Stopaj Kesintisi
+      </p>
 
-  <p>
-    Ancak yatırımcının eline geçen tutar brüt değildir.
-    Türkiye’de mevduat kazançlarından stopaj kesintisi yapılır.
-    Bu nedenle net kazancı görmek için stopaj oranı düşülmelidir.
-  </p>
+      <h2>2026 Güncel Stopaj Oranları</h2>
+      <ul>
+        <li>180 güne kadar: %17,5</li>
+        <li>181–365 gün: %15</li>
+        <li>1 yıl üzeri: %10</li>
+      </ul>
 
-  <h2>Stopaj Oranları 2026</h2>
-  <p>
-    TL vadeli mevduatta stopaj oranı vade süresine göre değişmektedir.
-  </p>
+      <h2>32 Günlük Mevduat Hesaplama</h2>
+      <p>
+        En sık tercih edilen vadedir. Bankalar kampanya faizlerini genellikle 32 gün üzerinden sunar.
+      </p>
 
-  <ul>
-    <li>180 güne kadar vadelerde stopaj oranı %17,5</li>
-    <li>181–365 gün arası vadelerde %15</li>
-    <li>1 yıldan uzun vadelerde %10</li>
-  </ul>
+      <h2>92 Günlük Mevduat</h2>
+      <p>
+        Orta vadeli yatırımcılar için dengeli bir seçenektir.
+      </p>
 
-  <p>
-    Bu oranlar dönemsel olarak değişebilir. Güncel oranları takip etmek yatırım açısından önemlidir.
-  </p>
+      <h2>180 Günlük Mevduat</h2>
+      <p>
+        Uzun vadede stopaj avantajı sağlayabilir.
+      </p>
 
-  <h2>32 Günlük Mevduat Hesaplama</h2>
-  <p>
-    Türkiye’de en sık tercih edilen vade 32 gündür.
-    32 günlük mevduat hesaplama işlemi kısa vadeli kazanç görmek isteyen yatırımcılar için uygundur.
-    Bankalar genellikle kampanya faizlerini 32 gün için sunar.
-  </p>
+      <h2>Sonuç</h2>
+      <p>
+        Net kazancı hesaplamadan yatırım yapmak risklidir. NetMevduat.net ile
+        mevduat net getirinizi saniyeler içinde hesaplayabilirsiniz.
+      </p>
 
-  <h2>92 Günlük Mevduat Hesaplama</h2>
-  <p>
-    3 aylık vadeye denk gelen 92 gün seçeneği, orta vadeli yatırımcılar için idealdir.
-    Faiz oranları genellikle 32 güne göre daha dengeli seviyededir.
-  </p>
-
-  <h2>180 Günlük Mevduat Hesaplama</h2>
-  <p>
-    6 aylık vadeler daha düşük stopaj avantajı sağlayabilir.
-    Uzun vadede faiz getirisi daha istikrarlı olabilir.
-  </p>
-
-  <h2>Net Mevduat Hesaplama Aracı Ne İşe Yarar?</h2>
-  <p>
-    NetMevduat.net üzerindeki hesaplama aracı, manuel formül kullanmadan
-    anında net kazancınızı görmenizi sağlar.
-    Aynı zamanda piyasa faiz aralıkları hakkında bilgilendirme sunar.
-  </p>
-
-  <h2>Mevduat mı Altın mı?</h2>
-  <p>
-    Mevduat yatırımı düşük riskli bir araçtır.
-    Altın ise fiyat dalgalanmalarına açıktır.
-    Kısa vadede sabit getiri isteyen yatırımcılar için mevduat daha öngörülebilir olabilir.
-  </p>
-
-  <h2>Faiz Kararları ve Mevduat Oranları</h2>
-  <p>
-    Türkiye Cumhuriyet Merkez Bankası’nın politika faiz kararları,
-    bankaların mevduat faiz oranlarını doğrudan etkiler.
-    Faiz artırımı dönemlerinde mevduat oranları yükselir,
-    faiz indirimi dönemlerinde düşebilir.
-  </p>
-
-  <h2>Sonuç</h2>
-  <p>
-    TL vadeli mevduat net getiri hesaplama işlemi,
-    yatırım kararınızdan önce mutlaka yapılmalıdır.
-    Net kazancı bilmeden yatırım yapmak risklidir.
-    NetMevduat.net ile saniyeler içinde doğru hesaplama yapabilirsiniz.
-  </p>
-</section>
-    
+    </section>
 
     <div id="root"></div>
   </body>
