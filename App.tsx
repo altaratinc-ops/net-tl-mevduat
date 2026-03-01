@@ -911,6 +911,18 @@ const scrollRef = useRef<ScrollView>(null as any);
     NetMevduat.net; sade arayüzü, hızlı hesaplama mantığı ve bilgilendirme panelleriyle mevduat kararınızı daha bilinçli vermenize yardımcı olur.
     İlerleyen aşamalarda farklı senaryolar, ek rehber içerikler ve daha kapsamlı bilgilendirmelerle bu sayfa genişletilebilir.
   </Text>
+   <Text style={[styles.seoH3, { color: t.text }]}>
+  Yasal Uyarı
+</Text>
+
+<Text style={[styles.seoP, { color: t.muted }]}>
+  Bu sitede yer alan mevduat hesaplama sonuçları bilgilendirme amaçlıdır.
+  NetMevduat.net yatırım danışmanlığı hizmeti vermez. Hesaplamalar,
+  kullanıcı tarafından girilen faiz oranı ve vade bilgilerine göre matematiksel
+  olarak oluşturulur. Nihai faiz oranları, stopaj oranları ve banka koşulları
+  değişkenlik gösterebilir. Yatırım kararları öncesinde resmi banka
+  kaynaklarının ve güncel mevzuatın kontrol edilmesi önerilir.
+</Text>
 </View>
 
           <Text style={[styles.footer, { color: t.placeholder }]}>© NetMevduat — sade, hızlı, net.</Text>
