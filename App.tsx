@@ -811,27 +811,94 @@ const scrollRef = useRef<ScrollView>(null as any);
           </View>
 
           {/* SEO */}
-          <View style={[styles.seoBlock, { backgroundColor: t.card, borderColor: t.border }]}>
-            <Text style={[styles.seoH2, { color: t.text }]}>Vadeli Mevduat Nedir?</Text>
-            <Text style={[styles.seoP, { color: t.muted }]}>
-              Vadeli mevduat, bankaya belirli bir süre için yatırılan paranın faiz getirisi elde etmesini sağlayan bir
-              tasarruf ürünüdür. NetMevduat.net üzerinden brüt ve net faiz getirilerinizi stopaj kesintisi dahil
-              hesaplayabilirsiniz.
-            </Text>
+   <View style={[styles.seoBlock, { backgroundColor: t.card, borderColor: t.border }]}>
+  <Text style={[styles.seoH2, { color: t.text }]}>
+    2026 Güncel Vadeli Mevduat Hesaplama Rehberi
+  </Text>
 
-            <Text style={[styles.seoH3, { color: t.text }]}>Stopaj Oranları Nasıl Hesaplanır?</Text>
-            <Text style={[styles.seoP, { color: t.muted }]}>
-              Türkiye’de vadeli mevduatta stopaj oranı vadeye göre değişebilir. Bu araç, seçtiğiniz vade gününe göre
-              stopajı otomatik uygular ve net kazancı gösterir. Yine de nihai oranlar için resmi kaynakları kontrol
-              etmeniz önerilir.
-            </Text>
+  <Text style={[styles.seoP, { color: t.muted }]}>
+    Vadeli mevduat hesaplama, yatırımcıların bankaya yatırdıkları paranın belirli bir süre sonunda
+    ne kadar kazandıracağını öğrenmesini sağlar. Türkiye’de 2026 yılı itibarıyla faiz oranları,
+    stopaj düzenlemeleri ve bankaların kampanya koşulları değişkenlik gösterebilir.
+    Bu nedenle net mevduat getirisini doğru hesaplamak büyük önem taşır.
+  </Text>
 
-            <Text style={[styles.seoH3, { color: t.text }]}>Mevduat Net Getiri Hesaplama</Text>
-            <Text style={[styles.seoP, { color: t.muted }]}>
-              Anapara, faiz oranı ve vade gününü girerek brüt getiri, stopaj kesintisi ve net kazancı tek ekranda
-              görebilirsiniz. Piyasa aralığı bölümü ise sadece bilgilendirme amaçlı referans sağlar.
-            </Text>
-          </View>
+  <Text style={[styles.seoH3, { color: t.text }]}>
+    Mevduat Net Getiri Nedir?
+  </Text>
+
+  <Text style={[styles.seoP, { color: t.muted }]}>
+    Net getiri; brüt faiz tutarından stopaj kesintisi çıkarıldıktan sonra yatırımcının eline
+    geçen gerçek kazançtır. Örneğin %40 faiz oranı kulağa yüksek gelebilir ancak stopaj
+    kesintisi sonrası net kazanç daha düşük olur. NetMevduat.net bu farkı otomatik olarak
+    hesaplayarak kullanıcıya net sonucu gösterir.
+  </Text>
+
+  <Text style={[styles.seoH3, { color: t.text }]}>
+    Stopaj Dahil Hesaplama Neden Önemlidir?
+  </Text>
+
+  <Text style={[styles.seoP, { color: t.muted }]}>
+    Türkiye’de vadeli mevduat stopaj oranı vade süresine göre değişebilir.
+    180 güne kadar farklı, 1 yıla kadar farklı ve 1 yıl üzeri için farklı oranlar
+    uygulanabilir. Sadece brüt faiz oranına bakmak yanıltıcı olabilir.
+    Bu araç, seçilen gün sayısına göre stopaj oranını otomatik uygular.
+  </Text>
+
+  <Text style={[styles.seoH3, { color: t.text }]}>
+    32 Günlük, 92 Günlük ve 180 Günlük Mevduat Karşılaştırması
+  </Text>
+
+  <Text style={[styles.seoP, { color: t.muted }]}>
+    Türkiye’de en çok tercih edilen vadeler 32 gün, 92 gün ve 180 gündür.
+    Kısa vadede esneklik sağlanırken, uzun vadede daha farklı kampanya oranları görülebilir.
+    Piyasa aralığı bölümü, bu vadeler için bilgilendirme amaçlı oran bantlarını gösterir.
+    Ancak nihai kazanç; bankanın sunduğu oran ve uygulanan stopaja göre değişir.
+  </Text>
+
+  <Text style={[styles.seoH3, { color: t.text }]}>
+    Faiz Oranı Yüksekse Kazanç Her Zaman Yüksek midir?
+  </Text>
+
+  <Text style={[styles.seoP, { color: t.muted }]}>
+    Yüksek faiz oranı tek başına yeterli değildir. Vade süresi, stopaj oranı
+    ve anapara tutarı birlikte değerlendirilmelidir. Örneğin kısa vadede yüksek oran
+    sunulabilir ancak net getiride fark daha düşük olabilir. Bu nedenle brüt ve net
+    kazancı birlikte görmek gerekir.
+  </Text>
+
+  <Text style={[styles.seoH3, { color: t.text }]}>
+    2026 Yılında Mevduat Stratejisi
+  </Text>
+
+  <Text style={[styles.seoP, { color: t.muted }]}>
+    2026 yılında faiz ortamı, merkez bankası kararlarına ve enflasyon görünümüne bağlı olarak
+    değişebilir. Bu nedenle yatırımcılar kısa vadeli mi yoksa orta vadeli mi tercih edeceklerini
+    hesaplama yaparak değerlendirmelidir. NetMevduat.net, farklı vade senaryolarını hızlı şekilde
+    test etmenizi sağlar.
+  </Text>
+
+  <Text style={[styles.seoH3, { color: t.text }]}>
+    Mevduat Hesaplama Aracı Nasıl Kullanılır?
+  </Text>
+
+  <Text style={[styles.seoP, { color: t.muted }]}>
+    Anapara tutarını girin, yıllık faiz oranını yazın ve vade gününü seçin.
+    Sistem brüt kazancı, stopaj kesintisini ve net getiriyi otomatik hesaplar.
+    Böylece bankalar arasında karşılaştırma yapmanız kolaylaşır.
+  </Text>
+
+  <Text style={[styles.seoH3, { color: t.text }]}>
+    Sonuç
+  </Text>
+
+  <Text style={[styles.seoP, { color: t.muted }]}>
+    Vadeli mevduat net getiri hesaplama, yatırım kararında en önemli adımdır.
+    Sadece faiz oranına değil, net kazanca odaklanmak gerekir.
+    NetMevduat.net sade arayüzü ve stopaj dahil hesaplama sistemiyle
+    yatırımcılara hızlı ve güvenilir bir hesaplama deneyimi sunar.
+  </Text>
+</View>
 
           <Text style={[styles.footer, { color: t.placeholder }]}>© NetMevduat — sade, hızlı, net.</Text>
         </ScrollView>
